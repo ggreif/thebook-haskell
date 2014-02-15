@@ -14,6 +14,7 @@ module Data.TheBook.Book (
     , Entry
     , empty
     , insert
+    , showBook
     ) where
 
 import qualified Data.Map.Strict as Map
@@ -44,3 +45,5 @@ insert price qty book = Book { unBook = Map.alter (Just . Maybe.maybe newLevel (
         newLevel :: Seq.Seq Entry
         newLevel = Seq.singleton newEntry
 
+showBook :: Book -> String
+showBook = Map.showTree . unBook
