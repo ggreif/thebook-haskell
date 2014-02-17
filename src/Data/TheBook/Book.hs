@@ -42,11 +42,13 @@ data Entry = Entry {
     , qty   :: Types.Qty
 } deriving Show
 
-class Side a where
-    priceS :: Types.Price
+class (Ord a) => Side a where
+    priceS :: Types.Price -> a
 
 newtype Buy = Buy Types.Price
+  deriving (Show)
 newtype Sell = Sell Types.Price
+  deriving (Show)
 
 instance Eq Buy where
     (==) = (==)
@@ -56,34 +58,39 @@ instance Ord Buy where
     compare = compare
 instance Ord Sell where
     p1 `compare` p2 = p2 `compare` p1
+instance Side Buy where
+    priceS = Buy
+instance Side Sell where
+    priceS = Sell
 
 -- | Limit order book.
-type Book a = Map a (Seq.Seq Entry)
+newtype Book = Book (Map Types.Price (Seq.Seq Entry))
+  deriving (Show)
 
 -- | Empty limit order book
-empty :: Book a
-empty = Map.empty
+empty :: Book
+empty = Book Map.empty
 
 insert :: Types.Price
        -> Types.Qty
-       -> Book a
-       -> Book a
-insert price qty = Map.alter (Just . Maybe.maybe newLevel (Seq.|> newEntry )) price
+       -> Book
+       -> Book
+insert price qty (Book book) = Book $ Map.alter (Just . Maybe.maybe newLevel (Seq.|> newEntry )) (price) book
   where newEntry = Entry { price = price, qty = qty }
         newLevel :: Seq.Seq Entry
         newLevel = Seq.singleton newEntry
 
 -- | Creates a 'Book' from a list of ('Types.Price', 'Types.Qty') pairs.
 fromList :: [(Types.Price, Types.Qty)]
-         -> Book a
+         -> Book
 fromList = List.foldr (Tuple.uncurry insert) empty
 
 -- | Creates correctly sorted list of ('Types.Price', 'Types.qty') pairs from this 'Book'.
-toList :: Book a
+toList :: Book
        -> [(Types.Price, Types.Qty)]
-toList book = let entries = Map.elems book
-                  seqs    = Fold.concatMap Fold.toList entries
-              in map (price &&& qty) seqs
+toList (Book book) = let entries = Map.elems book
+                         seqs    = Fold.concatMap Fold.toList entries
+                     in map (price &&& qty) seqs
 
-showBook :: Show a => Book a -> String
-showBook = Map.showTree
+showBook :: Book -> String
+showBook (Book book) = Map.showTree book

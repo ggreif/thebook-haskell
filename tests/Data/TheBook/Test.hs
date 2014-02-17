@@ -10,7 +10,6 @@
 -----------------------------------------------------------------------------
 module Data.TheBook.Test where
 
-import qualified Data.TheBook.TheBookTest as TheBookTest
 import qualified Data.TheBook.BookTest as BookTest
 import Test.Tasty
 import Test.Tasty.QuickCheck as QC
@@ -24,6 +23,5 @@ main = defaultMain tests
 
 tests :: TestTree
 tests = testGroup "Tests" [
-      TheBookTest.tests
-    , BookTest.tests
+      BookTest.tests
     ]

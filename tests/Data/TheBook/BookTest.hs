@@ -27,6 +27,5 @@ qcProps = testGroup "(checked by QuickCheck)"
 
 isCorrectlySorted :: [(Types.Price, Types.Qty)]
                   -> Bool
-isCorrectlySorted entries = let book = Book.fromList entries :: Book.Book Book.Buy
+isCorrectlySorted entries = let book = Book.fromList entries
                             in Book.toList book == sortBy (comparing fst) entries
-

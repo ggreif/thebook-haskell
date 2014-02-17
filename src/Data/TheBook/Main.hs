@@ -21,10 +21,11 @@ import System.Exit
 main :: IO ()
 main = do
     putStrLn "Hello World"
-    let book1 = insert 50 100 empty :: Book Buy
-        book2 = insert 51 100 book1 :: Book Buy
-    print book2
+    putStrLn "Wassup"
+    putStrLn $ showBook book2
     exitSuccess
+    where book1 = insert 50 100 empty
+          book2 = insert 51 100 book1
 
 
 
