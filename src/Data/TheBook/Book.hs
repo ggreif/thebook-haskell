@@ -1,9 +1,6 @@
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE TypeSynonymInstances #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE GADTs #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.TheBook.Book
@@ -26,6 +23,7 @@ module Data.TheBook.Book (
     , insert
     , fromList
     , toList
+    , showBook
  ) where
 
 import qualified Data.Foldable as Fold
@@ -44,45 +42,48 @@ data Entry = Entry {
     , qty   :: Types.Qty
 } deriving Show
 
-data Buy
-data Sell
+class Side a where
+    priceS :: Types.Price
 
-newtype SortablePrice a = SortablePrice Types.Price
-instance Eq (SortablePrice Buy) where
-      p1 == p2 = p1 == p2
-instance Eq (SortablePrice Sell) where
-      p1 == p2 = p2 == p2
-instance Ord (SortablePrice Buy) where
-      compare = compare
-instance Ord (SortablePrice Sell) where
-      compare p1 p2 = compare p2 p1
+newtype Buy = Buy Types.Price
+newtype Sell = Sell Types.Price
 
+instance Eq Buy where
+    (==) = (==)
+instance Eq Sell where
+    (==) = (==)
+instance Ord Buy where
+    compare = compare
+instance Ord Sell where
+    p1 `compare` p2 = p2 `compare` p1
 
 -- | Limit order book.
-type Book a = Map (SortablePrice a) (Seq.Seq Entry)
+type Book a = Map a (Seq.Seq Entry)
 
 -- | Empty limit order book
-empty :: Ord (SortablePrice a) => Book a
+empty :: Book a
 empty = Map.empty
 
-insert :: Ord (SortablePrice a)
-       => Types.Price
+insert :: Types.Price
        -> Types.Qty
        -> Book a
        -> Book a
-insert price qty = Map.alter (Just . Maybe.maybe newLevel (Seq.|> newEntry )) (SortablePrice price)
+insert price qty = Map.alter (Just . Maybe.maybe newLevel (Seq.|> newEntry )) price
   where newEntry = Entry { price = price, qty = qty }
         newLevel :: Seq.Seq Entry
         newLevel = Seq.singleton newEntry
 
 -- | Creates a 'Book' from a list of ('Types.Price', 'Types.Qty') pairs.
-fromList :: Ord (SortablePrice a) => [(Types.Price, Types.Qty)]
+fromList :: [(Types.Price, Types.Qty)]
          -> Book a
 fromList = List.foldr (Tuple.uncurry insert) empty
 
 -- | Creates correctly sorted list of ('Types.Price', 'Types.qty') pairs from this 'Book'.
-toList :: Ord (SortablePrice a) => Book a
+toList :: Book a
        -> [(Types.Price, Types.Qty)]
 toList book = let entries = Map.elems book
                   seqs    = Fold.concatMap Fold.toList entries
               in map (price &&& qty) seqs
+
+showBook :: Show a => Book a -> String
+showBook = Map.showTree

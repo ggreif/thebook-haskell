@@ -9,18 +9,21 @@
 -- Exchange simulator in Haskell.
 -----------------------------------------------------------------------------
 module Data.TheBook.Main (
-   module Data.TheBook.Types
- , module Data.TheBook.Book
+   module Types
+ , module Book
  , main
  ) where
 
-import Data.TheBook.Types
-import Data.TheBook.Book
+import Data.TheBook.Types as Types
+import Data.TheBook.Book as Book
 import System.Exit
 
 main :: IO ()
 main = do
     putStrLn "Hello World"
+    let book1 = insert 50 100 empty :: Book Buy
+        book2 = insert 51 100 book1 :: Book Buy
+    print book2
     exitSuccess
 
 
