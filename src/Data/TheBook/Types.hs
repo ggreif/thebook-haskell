@@ -18,9 +18,6 @@ type Price = Double
 -- | Type of a quantity.
 type Qty = Int
 
--- | Time when an entry entered the `Data.TheBook.Book`.
-type Time = Clock.UTCTime
-
 -- | Indicates the side of an order.
 data Side = Buy  -- ^ Indicates a buy order.
           | Sell -- ^ Indicates a sell order.

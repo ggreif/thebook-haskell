@@ -1,0 +1,11 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Data.TheBook.Messages
+-- Copyright   :  (c) 2014, Jakub Kozlowski
+-- License     :  MIT
+--
+-- Maintainer  :  mail@jakub-kozlowski.com
+--
+-- 
+-----------------------------------------------------------------------------
+module Data.TheBook.Messages where

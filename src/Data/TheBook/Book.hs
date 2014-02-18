@@ -1,6 +1,3 @@
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE GADTs #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.TheBook.Book
@@ -24,7 +21,6 @@ module Data.TheBook.Book (
     , insert
     , fromList
     , toList
-    , showBook
  ) where
 
 import qualified Data.Foldable as Fold
@@ -35,7 +31,7 @@ import qualified Data.List as List
 import qualified Data.Sequence as Seq
 import qualified Data.Maybe as Maybe
 import qualified Data.TheBook.Types as Types
-import Control.Arrow
+import Control.Arrow ((&&&))
 
 -- | Limit price passive order sitting on the 'Book'.
 data Entry = Entry {
@@ -43,11 +39,18 @@ data Entry = Entry {
     , qty   :: Types.Qty
 } deriving Show
 
+-- | Specifies a side of the book.
+-- See 'Buy' and 'Sell' for possible values.
 class (Ord a) => Side a where
-    priceS :: Types.Price -> a
+    liftPrice :: Types.Price -> a
 
+-- | Specifies a buy 'Book'.
+-- Entries will be sorted from high to low price.
 newtype Buy = Buy Types.Price
   deriving (Show)
+
+-- | Specifies a sell 'Book'.
+-- Entries will be sorted from low to high price.
 newtype Sell = Sell Types.Price
   deriving (Show)
 
@@ -60,27 +63,35 @@ instance Ord Sell where
 instance Ord Buy where
     (Buy p1) `compare` (Buy p2) = p2 `compare` p1
 instance Side Buy where
-    priceS = Buy
+    liftPrice = Buy
 instance Side Sell where
-    priceS = Sell
+    liftPrice = Sell
 
 -- | Limit order book.
 newtype Book a = Book (Map a (Seq.Seq Entry))
   deriving (Show)
 
--- | Empty limit order book
+-- | Empty limit order book.
 empty :: Book a
 empty = Book Map.empty
 
+-- | O(log n). Inserts an entry for this price and quantity.
+--
+-- >> toList (book :: Book Buy)
+-- [(51.0,100),(51.0,100),(51.0,50),(50.0,10),(45.0,5)]
+--
+-- >>> insert 50.0 5 book
+-- [(51.0,100),(51.0,100),(51.0,50),(50.0,10),(50.0,5),(45.0,5)]
 insert :: Side a =>
-          Types.Price
-       -> Types.Qty
-       -> Book a
-       -> Book a
-insert price qty (Book book) = Book $ Map.alter (Just . Maybe.maybe newLevel (Seq.|> newEntry )) (priceS price) book
-  where newEntry = Entry { price = price, qty = qty }
-        newLevel :: Seq.Seq Entry
-        newLevel = Seq.singleton newEntry
+          Types.Price -- ^ price of the new entry
+       -> Types.Qty   -- ^ quantity of the new entry
+       -> Book a      -- ^ book to insert to
+       -> Book a      -- ^ modified book
+insert price qty (Book book) =
+        let newEntry = Entry { price = price, qty = qty }
+            newLevel = Seq.singleton newEntry
+            newPrice = liftPrice price
+        in Book $ Map.alter (Just . Maybe.maybe newLevel (Seq.|> newEntry )) newPrice book
 
 -- | Creates a 'Book' from a list of ('Types.Price', 'Types.Qty') pairs.
 fromList :: Side a
@@ -95,6 +106,3 @@ toList :: Side a
 toList (Book book) = let entries = Map.elems book
                          seqs    = Fold.concatMap Fold.toList entries
                      in map (price &&& qty) seqs
-
-showBook :: Show a => Book a -> String
-showBook (Book book) = Map.showTree book
