@@ -22,10 +22,15 @@ tests :: TestTree
 tests = testGroup "Data.TheBook.TheBookTest" [qcProps]
 
 qcProps = testGroup "(checked by QuickCheck)"
-  [ QC.testProperty "fromList == stable sort by price . toList" isCorrectlySorted
+  [ QC.testProperty "fromList buys == reverse stable sort by price . toList" isCorrectlySortedBuy
+  , QC.testProperty "fromList sells == stable sort by price . toList" isCorrectlySortedSell
   ]
 
-isCorrectlySorted :: [(Types.Price, Types.Qty)]
-                  -> Bool
-isCorrectlySorted entries = let book = Book.fromList entries
-                            in Book.toList book == sortBy (comparing fst) entries
+isCorrectlySortedSell :: [(Types.Price, Types.Qty)]
+                      -> Bool
+isCorrectlySortedSell entries = let book = Book.fromList entries :: Book.Book Book.Sell
+                                in Book.toList book == sortBy (comparing fst) entries
+isCorrectlySortedBuy :: [(Types.Price, Types.Qty)]
+                     -> Bool
+isCorrectlySortedBuy entries = let book = Book.fromList entries :: Book.Book Book.Buy
+                               in Book.toList book == sortBy (flip $ comparing fst) entries

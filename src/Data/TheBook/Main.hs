@@ -10,7 +10,6 @@
 -----------------------------------------------------------------------------
 module Data.TheBook.Main (
    module Types
- , module Book
  , main
  ) where
 
@@ -24,7 +23,7 @@ main = do
     putStrLn "Wassup"
     putStrLn $ showBook book2
     exitSuccess
-    where book1 = insert 50 100 empty
+    where book1 = insert 50 100 empty :: Book.Book Book.Buy
           book2 = insert 51 100 book1
 
 

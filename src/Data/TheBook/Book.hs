@@ -17,6 +17,7 @@ module Data.TheBook.Book (
     , Entry
     , Buy
     , Sell
+    , Side
     , price
     , qty
     , empty
@@ -51,46 +52,49 @@ newtype Sell = Sell Types.Price
   deriving (Show)
 
 instance Eq Buy where
-    (==) = (==)
+    (Buy p1) == (Buy p2) = p1 == p2
 instance Eq Sell where
-    (==) = (==)
-instance Ord Buy where
-    compare = compare
+    (Sell p1) == (Sell p2) = p2 == p1
 instance Ord Sell where
-    p1 `compare` p2 = p2 `compare` p1
+    (Sell p1) `compare` (Sell p2) = p1 `compare` p2
+instance Ord Buy where
+    (Buy p1) `compare` (Buy p2) = p2 `compare` p1
 instance Side Buy where
     priceS = Buy
 instance Side Sell where
     priceS = Sell
 
 -- | Limit order book.
-newtype Book = Book (Map Types.Price (Seq.Seq Entry))
+newtype Book a = Book (Map a (Seq.Seq Entry))
   deriving (Show)
 
 -- | Empty limit order book
-empty :: Book
+empty :: Book a
 empty = Book Map.empty
 
-insert :: Types.Price
+insert :: Side a =>
+          Types.Price
        -> Types.Qty
-       -> Book
-       -> Book
-insert price qty (Book book) = Book $ Map.alter (Just . Maybe.maybe newLevel (Seq.|> newEntry )) (price) book
+       -> Book a
+       -> Book a
+insert price qty (Book book) = Book $ Map.alter (Just . Maybe.maybe newLevel (Seq.|> newEntry )) (priceS price) book
   where newEntry = Entry { price = price, qty = qty }
         newLevel :: Seq.Seq Entry
         newLevel = Seq.singleton newEntry
 
 -- | Creates a 'Book' from a list of ('Types.Price', 'Types.Qty') pairs.
-fromList :: [(Types.Price, Types.Qty)]
-         -> Book
+fromList :: Side a
+         => [(Types.Price, Types.Qty)]
+         -> Book a
 fromList = List.foldr (Tuple.uncurry insert) empty
 
 -- | Creates correctly sorted list of ('Types.Price', 'Types.qty') pairs from this 'Book'.
-toList :: Book
+toList :: Side a
+       => Book a
        -> [(Types.Price, Types.Qty)]
 toList (Book book) = let entries = Map.elems book
                          seqs    = Fold.concatMap Fold.toList entries
                      in map (price &&& qty) seqs
 
-showBook :: Book -> String
+showBook :: Show a => Book a -> String
 showBook (Book book) = Map.showTree book
