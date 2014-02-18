@@ -3,7 +3,16 @@ thebook-haskell
 
 Exchange simulator in Haskell
 
+## Done
+
+
 ## TODO
+
+### General features
+* Networking (FIX in/OUCH or ITCH out)
+* Admin commands (create market, clear order book)
+
+### Order types
 * Limit orders
 * Market orders
 * TimeInForce
@@ -16,6 +25,9 @@ Exchange simulator in Haskell
 * Named Orders
 * Executable Quotes
 * Firm Quotes
+
+### Config
+* Use [dire](http://hackage.haskell.org/package/dyre) for config.
 
 ## Phases
 * Validation (NewOrderSingle enters -> Particular order comes out)
