@@ -39,3 +39,5 @@ Exchange simulator in Haskell
 
 ## Useful
 * http://www.londonstockexchange.com/products-and-services/millennium-exchange/technicalinformation/technicalinformation.htm
+* http://www.londonstockexchange.com/products-and-services/millennium-exchange/millennium-exchange-migration/mit203-issue103final.pdf
+* http://www.londonstockexchange.com/products-and-services/millennium-exchange/millennium-exchange-migration/mit303.pdf
