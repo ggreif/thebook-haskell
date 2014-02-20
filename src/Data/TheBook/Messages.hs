@@ -29,18 +29,18 @@ data NewOrderSingle = NewOrderSingle {
     -- by institution or by the intermediary (CIV term,
     -- not a hub/service bureau) with closest association
     -- with the investor.
-    clOrdId :: Text
+    clOrdId :: !Text
 
     -- | Insert here the set of "Instrument" (symbology)
     -- fields defined in "Common Components of Application Messages".
-  , instrument :: Types.Instrument
+  , instrument :: !Types.Instrument
 
     -- | Side of the order.
-  , side :: Types.Side
+  , side :: !Types.Side
 
     -- | Time this order request was initiated/released by the trader,
     -- trading system, or intermediary.
-  , transactTime :: Types.Time
+  , transactTime :: !Types.Time
 
-  , orderType :: Types.OrderType
+  , orderType :: !Types.OrderType
 }
