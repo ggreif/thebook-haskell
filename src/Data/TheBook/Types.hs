@@ -26,10 +26,13 @@ type Instrument = Text
 type Time = Clock.UTCTime
 
 -- | Indicates the side of an order.
-data Side = Buy  -- ^ Indicates a buy order.
-          | Sell -- ^ Indicates a sell order.
+data Side
+  = Buy  -- ^ Indicates a buy order.
+  | Sell -- ^ Indicates a sell order.
+  deriving (Eq, Show)
 
 -- | Allowed order types
 data OrderType
   = Market -- | 1
   | Limit  -- | 2
+  deriving (Eq, Show)
