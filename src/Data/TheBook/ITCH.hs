@@ -65,16 +65,6 @@ instance Binary UInt64 where
   get = UInt64 <$> getWord64le
   put (UInt64 uint64) = putWord64le uint64
 
--- Unit header:
--- Field             | Offset | Length   | Type   | Description
--- ----------------------------------------------------------
--- Length            | 0      | 2        | UInt16 | Length of the message block including the header and all payload messages.
--- Message Count     | 2      | 1        | UInt8  | Number of payload messages that will follow the header.
--- Market Data Group | 3      | 1        |  Byte  | Identity of the market data group the payload messages relate to.
---                   |        |          |        | This field is not validated for client initiated messages.
--- Sequence Number   | 4      | 4        | UInt32 | Sequence number of the first payload message.
--- Payload           | 8      | Variable | -      | One or more payload messages.
-
 -- | Buy order
 _B :: Word8
 _B = 0x42
@@ -92,6 +82,21 @@ _Market_Yes = bit 4
 -- | Zero byte
 _0 :: Word8
 _0 = 0x0
+
+-- Unit header:
+-- Field             | Offset | Length   | Type   | Description
+-- ----------------------------------------------------------
+-- Length            | 0      | 2        | UInt16 | Length of the message block including the header and all payload messages.
+-- Message Count     | 2      | 1        | UInt8  | Number of payload messages that will follow the header.
+-- Market Data Group | 3      | 1        |  Byte  | Identity of the market data group the payload messages relate to.
+--                   |        |          |        | This field is not validated for client initiated messages.
+-- Sequence Number   | 4      | 4        | UInt32 | Sequence number of the first payload message.
+-- Payload           | 8      | Variable | -      | One or more payload messages.
+
+-- | Message header
+class ITCHMessage a where
+    length      :: a -> UInt8
+    messageType :: a -> Byte
 
 -- 4.9.5 Add Order
 --
@@ -128,6 +133,10 @@ data IAddOrder = IAddOrder {
   --                                             |     |              | Yes=1
   , flags :: Types.OrderType
 }
+
+instance ITCHMessage IAddOrder where
+    length a = 1
+    messageType a = 0x41
 
 instance Binary IAddOrder where
   get = do
