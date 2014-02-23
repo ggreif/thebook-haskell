@@ -35,7 +35,6 @@ import qualified Data.TheBook.Types as Types
 type BitField = Word8
 
 -- | Byte      | 1        | A single byte used to hold one ASCII character.
-
 type Byte = Word8
 
 -- | Date      | 8        | Date specified in the YYYYMMDD format using ASCII characters.
@@ -108,16 +107,16 @@ class ITCHMessage a where
 data IAddOrder = IAddOrder {
 
   -- Order ID      | 6      | 8      | UInt64    | Unique identifier of the order.
-    orderId    :: UInt64
+    orderId      :: !UInt64
 
   -- Side          | 14     | 1      | Byte      | Value Meaning: B=Buy Order; S=Sell Order
-  , side       :: Types.Side
+  , side         :: !Types.Side
 
   -- Quantity      | 15     | 4      | UInt32    | Displayed quantity of the order.
-  , quantity   :: UInt32
+  , quantity     :: !UInt32
 
   -- Instrument ID | 19     | 4      | UInt32    | Instrument identifier
-  , instrumentId :: UInt32
+  , instrumentId :: !UInt32
 
   -- Reserved      | 23     | 1      | Byte      | Reserved field
   -- Ignored
@@ -126,12 +125,12 @@ data IAddOrder = IAddOrder {
   -- Ignored
 
   -- Price         | 25     | 8      | Price     | Limit price of the order.
-  , price :: Price
+  , price        :: !Price
 
   -- Flags         | 33     | 1      | Bit Field | Bit | Name         | Meaning
   --                                             | 4   | Market Order | No=0
   --                                             |     |              | Yes=1
-  , flags :: Types.OrderType
+  , flags        :: !Types.OrderType
 }
 
 instance ITCHMessage IAddOrder where
