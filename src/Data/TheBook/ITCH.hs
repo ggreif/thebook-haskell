@@ -1,6 +1,8 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE DataKinds #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.TheBook.ITCH
@@ -16,9 +18,10 @@
 -- <http://www.londonstockexchange.com/products-and-services/millennium-exchange/millennium-exchange-migration/mit303.pdf>.
 -----------------------------------------------------------------------------
 module Data.TheBook.ITCH (
-    AddOrder
-  , MessageHeader, messageLength, messageType
+    MessageHeader, messageLength, messageType
   , messageHeaderLength
+  , AddOrder
+  , OrderDeleted
   ) where
 
 import Data.Bits (bit)
@@ -107,6 +110,17 @@ instance Binary OrdType where
                                      | orderType == Types.Market -> _Market_Yes
                                      | otherwise                 -> error "This is impossible"
 
+newtype FirmQuote = FirmQuote Types.FirmQuote
+  deriving (Eq, Show, Arbitrary)
+instance Binary FirmQuote where
+  get = do
+    firmQuote <- get
+    if | firmQuote == _FirmQuote_Yes -> return $ FirmQuote Types.FQ_Yes
+       | firmQuote == _FirmQuote_No  -> return $ FirmQuote Types.FQ_No
+       | otherwise                   -> fail "Unknown firmQuote"
+  put (FirmQuote firmQuote) = put $ if | firmQuote == Types.FQ_Yes -> _FirmQuote_Yes
+                                       | firmQuote == Types.FQ_No  -> _FirmQuote_No
+                                       | otherwise                 -> error "This is impossible"
 -- | Buy order
 _B :: Byte
 _B = 0x42
@@ -120,6 +134,12 @@ _Market_No =  0x0
 
 _Market_Yes :: Word8
 _Market_Yes = bit 4
+
+_FirmQuote_No :: Word8
+_FirmQuote_No =  0x0
+
+_FirmQuote_Yes :: Word8
+_FirmQuote_Yes = bit 5
 
 -- | Zero byte
 _0 :: Word8
@@ -155,46 +175,46 @@ messageHeaderLength
     sizeOf (0 :: Byte)   + -- Message Type
     sizeOf (UInt32 0)      -- Nanosecond
 
+
 -- * 4.9. Application Messages
 -- $applicationMessages
 
--- ** 4.9.5 Add Order (Hex=0x41 - A)
+-- ** 4.9.5 Add Order (Hex=0x41 == 'A')
 --
-
 -- | Field         | Offset | Length | Type      | Description
---  ---------------------------------------------------------
+--  -----------------------------------------------------------
 data AddOrder = AddOrder {
 
   -- Order ID      | 6      | 8      | UInt64    | Unique identifier of the order.
-    orderId           :: {-# UNPACK #-} !UInt64
+    _addOrderId      :: {-# UNPACK #-} !UInt64
 
   -- Side          | 14     | 1      | Byte      | Value Meaning: B=Buy Order; S=Sell Order
-  , side              :: {-# UNPACK #-} !Side
+  , _addSide         :: {-# UNPACK #-} !Side
 
   -- Quantity      | 15     | 4      | UInt32    | Displayed quantity of the order.
-  , quantity          :: {-# UNPACK #-} !UInt32
+  , _addQuantity     :: {-# UNPACK #-} !UInt32
 
   -- Instrument ID | 19     | 4      | UInt32    | Instrument identifier
-  , instrumentId      :: {-# UNPACK #-} !UInt32
+  , _addInstrumentId :: {-# UNPACK #-} !UInt32
 
   -- Reserved      | 23     | 1      | Byte      | Reserved field
-  , addOrderReserved1 :: {-# UNPACK #-} !Byte
+  , _addReserved1    :: {-# UNPACK #-} !Byte
 
   -- Reserved      | 24     | 1      | Byte      | Reserved field
-  , addOrderReserved2 :: {-# UNPACK #-} !Byte
+  , _addReserved2    :: {-# UNPACK #-} !Byte
 
   -- Price         | 25     | 8      | Price     | Limit price of the order.
-  , price             :: {-# UNPACK #-} !Price
+  , _addPrice        :: {-# UNPACK #-} !Price
 
   -- Flags         | 33     | 1      | Bit Field | Bit | Name         | Meaning
   --                                             | 4   | Market Order | No=0
   --                                             |     |              | Yes=1
-  , flags             :: {-# UNPACK #-} !OrdType
-} deriving (Show, Eq)
+  , _addFlags       :: {-# UNPACK #-} !OrdType
+} deriving (Eq, Show)
 
 instance MessageHeader AddOrder where
     messageLength a
-      = fromIntegral $ sizeOf (UInt64 1) + -- OrderId
+      = fromIntegral $ sizeOf (UInt64 1) + -- Order ID
         sizeOf (0 :: Byte)               + -- Side
         sizeOf (UInt32 0)                + -- Quantity
         sizeOf (UInt32 0)                + -- Instrument ID
@@ -214,14 +234,14 @@ instance Binary AddOrder where
                  <*> get
                  <*> get
   put AddOrder {..} =
-    put orderId           *>
-    put side              *>
-    put quantity          *>
-    put instrumentId      *>
-    put addOrderReserved1 *>
-    put addOrderReserved2 *>
-    put price             *>
-    put flags
+    put _addOrderId      *>
+    put _addSide         *>
+    put _addQuantity     *>
+    put _addInstrumentId *>
+    put _addReserved1    *>
+    put _addReserved2    *>
+    put _addPrice        *>
+    put _addFlags
 
 instance Arbitrary AddOrder where
   arbitrary
@@ -234,10 +254,43 @@ instance Arbitrary AddOrder where
                <*> arbitrary
                <*> arbitrary
 
--- * 4.9.7. Order Deleted (Hex: 0x44)
+-- * 4.9.7. Order Deleted (Hex: 0x44 -- 'D')
 --
 -- | Field         | Offset | Length | Type      | Description
---  ---------------------------------------------------------
+--  -----------------------------------------------------------
+data OrderDeleted = OrderDeleted {
 
+  -- Order ID      | 6      | 8      | UInt64    | Identifier for the order.
+    _deleteOrderId      :: {-# UNPACK #-} !UInt64
 
+  -- Flags         | 14     | 1      | Bit Field | Bit | Name       | Meaning
+  --                                             | 5   | Firm Quote | No=0
+  --                                                                | Yes=1
+  , _deleteFlags        :: {-# UNPACK #-} !Byte
+
+  -- InstrumentID  | 15     | 4      | UInt32    | Instrument Identifier.
+  , _deleteInstrumentId :: {-# UNPACK #-} !UInt32
+} deriving (Eq, Show)
+
+instance MessageHeader OrderDeleted where
+  messageLength a
+    = fromIntegral $ sizeOf (UInt64 0) + -- Order ID
+      sizeOf (0 :: Byte)               + -- Flags
+      sizeOf (UInt32 0)                  -- InstrumentID
+  messageType a = 0x44 -- D
+
+instance Binary OrderDeleted where
+  get = OrderDeleted <$> get
+                     <*> get
+                     <*> get
+  put OrderDeleted {..} =
+    put _deleteOrderId      *>
+    put _deleteFlags        *>
+    put _deleteInstrumentId
+
+instance Arbitrary OrderDeleted where
+  arbitrary
+    = OrderDeleted <$> arbitrary
+                   <*> arbitrary
+                   <*> arbitrary
 

@@ -10,7 +10,11 @@
 -- Various data types from the point of a client listening
 -- to order book updates.
 -----------------------------------------------------------------------------
-module Data.TheBook.MarketData where
+module Data.TheBook.MarketData (
+    Side(..),
+    OrdType(..),
+    FirmQuote(..)
+) where
 
 import Data.Word (Word32)
 import qualified Data.TheBook.Types as Types
@@ -30,6 +34,13 @@ data OrdType
   deriving (Eq, Show)
 instance Arbitrary OrdType where
   arbitrary = elements [Market, Limit]
+
+data FirmQuote
+  = FQ_Yes
+  | FQ_No
+  deriving (Eq, Show)
+instance Arbitrary FirmQuote where
+  arbitrary = elements [FQ_Yes, FQ_No]
 
 class AddOrder where
     orderId  :: Word32

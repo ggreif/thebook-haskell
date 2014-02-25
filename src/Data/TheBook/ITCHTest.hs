@@ -25,23 +25,31 @@ tests = testGroup "Data.TheBook.ITCHTest" [qcProps]
 
 qcProps = testGroup "(checked by QuickCheck)"
   [ QC.testProperty "messageHeaderLength == 6" (ITCH.messageHeaderLength == 6)
-  , QC.testProperty "length (AddOrder)   == 28" addOrderMessageLengthProp
-  , QC.testProperty "decode (encode (AddOrder)) == AddOrder" addOrderMessageBinaryProp
-  , QC.testProperty "length (AddOrder) == length (encode (AddOrder))" addOrderMessageBinaryLengthProp
+  -- AddOrder
+  , QC.testProperty "length (AddOrder) == 28" addOrderMessageLengthProp
+  , QC.testProperty "decode (encode (AddOrder)) == AddOrder" (messageBinaryProp :: ITCH.AddOrder -> Bool)
+  , QC.testProperty "length (AddOrder) == length (encode (AddOrder))" (messageBinaryProp :: ITCH.AddOrder -> Bool)
+  -- DeleteOrder
+  , QC.testProperty "length (OrderDeleted) == 13" orderDeletedMessageLengthProp
+  , QC.testProperty "decode (encode (OrderDeleted)) == OrderDeleted" (messageBinaryProp :: ITCH.OrderDeleted -> Bool)
+  , QC.testProperty "length (DeleteOrder) == length (encode (OrderDeleted))" (messageBinaryProp :: ITCH.OrderDeleted -> Bool)
   ]
 
 addOrderMessageLengthProp :: ITCH.AddOrder -> Bool
 addOrderMessageLengthProp addOrder = ITCH.messageLength addOrder == 28
 
-addOrderMessageBinaryProp :: ITCH.AddOrder -> Bool
-addOrderMessageBinaryProp addOrder = let encoded        = B.encode addOrder
-                                         decoded        = B.decode encoded :: ITCH.AddOrder
-                                         lengthEncoded  = L.length encoded
-                                         lengthExpected = fromIntegral $ ITCH.messageLength addOrder
-                                     in addOrder == decoded && lengthEncoded == lengthExpected
+orderDeletedMessageLengthProp :: ITCH.OrderDeleted -> Bool
+orderDeletedMessageLengthProp orderDeleted = ITCH.messageLength orderDeleted == 13
 
-addOrderMessageBinaryLengthProp :: ITCH.AddOrder -> Bool
-addOrderMessageBinaryLengthProp addOrder = let encoded        = B.encode addOrder
-                                               lengthEncoded  = L.length encoded
-                                               lengthExpected = fromIntegral $ ITCH.messageLength addOrder
-                                           in lengthEncoded == lengthExpected
+messageBinaryProp :: (ITCH.MessageHeader a, B.Binary a, Eq a) => a -> Bool
+messageBinaryProp m = let encoded        = B.encode m
+                          decoded        = B.decode encoded
+                          lengthEncoded  = L.length encoded
+                          lengthExpected = fromIntegral $ ITCH.messageLength m
+                      in m == decoded && lengthEncoded == lengthExpected
+
+messageBinaryLengthProp :: (ITCH.MessageHeader a, B.Binary a) => a -> Bool
+messageBinaryLengthProp m = let encoded        = B.encode m
+                                lengthEncoded  = L.length encoded
+                                lengthExpected = fromIntegral $ ITCH.messageLength m
+                            in lengthEncoded == lengthExpected
