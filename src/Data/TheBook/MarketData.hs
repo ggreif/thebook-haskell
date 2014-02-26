@@ -11,9 +11,10 @@
 -- to order book updates.
 -----------------------------------------------------------------------------
 module Data.TheBook.MarketData (
-    Side(..),
-    OrdType(..),
-    FirmQuote(..)
+    Side(..)
+  , OrdType(..)
+  , FirmQuote(..)
+  , Priority(..)
 ) where
 
 import Data.Word (Word32)
@@ -41,6 +42,13 @@ data FirmQuote
   deriving (Eq, Show)
 instance Arbitrary FirmQuote where
   arbitrary = elements [FQ_Yes, FQ_No]
+
+data Priority
+  = Lost
+  | Retained
+  deriving (Eq, Show)
+instance Arbitrary Priority where
+  arbitrary = elements [Lost, Retained]
 
 class AddOrder where
     orderId  :: Word32

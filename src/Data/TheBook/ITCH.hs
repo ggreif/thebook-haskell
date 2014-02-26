@@ -16,15 +16,22 @@
 -- <http://www.londonstockexchange.com/products-and-services/millennium-exchange/technicalinformation/technicalinformation.htm>,
 -- specifically:
 -- <http://www.londonstockexchange.com/products-and-services/millennium-exchange/millennium-exchange-migration/mit303.pdf>.
+--
+-- The messages here can be used standalone, or serialised directly into ITCH format from
+-- corresponding 'Data.TheBook.MarketData' messages, in order to improve on memory
+-- allocation.
 -----------------------------------------------------------------------------
 module Data.TheBook.ITCH (
-    MessageHeader, messageLength, messageType
-  , messageHeaderLength
+    -- | Message header
+    MessageHeader, messageLength, messageType, messageHeaderLength
+
+    -- | Messages
   , AddOrder
   , OrderDeleted
+  , OrderModified
   ) where
 
-import Data.Bits (bit)
+import Data.Bits (bit, testBit, (.|.))
 import Data.Word
 import Data.Binary (Binary, get, put)
 import Data.Binary.Get (Get, getWord16le, getWord32le, getWord64le)
@@ -121,6 +128,38 @@ instance Binary FirmQuote where
   put (FirmQuote firmQuote) = put $ if | firmQuote == Types.FQ_Yes -> _FirmQuote_Yes
                                        | firmQuote == Types.FQ_No  -> _FirmQuote_No
                                        | otherwise                 -> error "This is impossible"
+
+newtype Priority = Priority Types.Priority
+  deriving (Eq, Show, Arbitrary)
+instance Binary Priority where
+  get = do
+    priority <- get
+    if | priority == _Priority_Lost     -> return $ Priority Types.Lost
+       | priority == _Priority_Retained -> return $ Priority Types.Retained
+       | otherwise                      -> fail "Unknown priority"
+  put (Priority priority) = put $ if | priority == Types.Lost     -> _Priority_Lost
+                                     | priority == Types.Retained -> _Priority_Retained
+                                     | otherwise                  -> error "This is impossible"
+
+newtype ModifyFlags = ModifyFlags (Priority, FirmQuote)
+  deriving (Eq, Show, Arbitrary)
+instance Binary ModifyFlags where
+  get = do
+    modifyFlags <- get :: Get Byte
+    let priority  = if | testBit modifyFlags 0 -> Types.Retained
+                       | otherwise             -> Types.Lost
+        firmQuote = if | testBit modifyFlags 5 -> Types.FQ_Yes
+                       | testBit modifyFlags 5 -> Types.FQ_No
+    return $! ModifyFlags (Priority priority, FirmQuote firmQuote)
+  put (ModifyFlags (Priority priority, FirmQuote firmQuote))
+    = let priorityBinary  = if | priority == Types.Lost     -> _Priority_Lost
+                               | priority == Types.Retained -> _Priority_Retained
+                               | otherwise                  -> error "This is impossible"
+          firmQuoteBinary = if | firmQuote == Types.FQ_Yes -> _FirmQuote_Yes
+                               | firmQuote == Types.FQ_No  -> _FirmQuote_No
+                               | otherwise                 -> error "This is impossible"
+      in put (priorityBinary .|. firmQuoteBinary)
+
 -- | Buy order
 _B :: Byte
 _B = 0x42
@@ -140,6 +179,12 @@ _FirmQuote_No =  0x0
 
 _FirmQuote_Yes :: Word8
 _FirmQuote_Yes = bit 5
+
+_Priority_Lost :: Word8
+_Priority_Lost = 0x0
+
+_Priority_Retained :: Word8
+_Priority_Retained = bit 0
 
 -- | Zero byte
 _0 :: Word8
@@ -207,8 +252,8 @@ data AddOrder = AddOrder {
   , _addPrice        :: {-# UNPACK #-} !Price
 
   -- Flags         | 33     | 1      | Bit Field | Bit | Name         | Meaning
-  --                                             | 4   | Market Order | No=0
-  --                                             |     |              | Yes=1
+  --                                             | 4   | Market Order | 0:No
+  --                                             |     |              | 1:Yes
   , _addFlags       :: {-# UNPACK #-} !OrdType
 } deriving (Eq, Show)
 
@@ -254,7 +299,7 @@ instance Arbitrary AddOrder where
                <*> arbitrary
                <*> arbitrary
 
--- * 4.9.7. Order Deleted (Hex: 0x44 -- 'D')
+-- * 4.9.7. Order Deleted (Hex: 0x44 == 'D')
 --
 -- | Field         | Offset | Length | Type      | Description
 --  -----------------------------------------------------------
@@ -264,9 +309,9 @@ data OrderDeleted = OrderDeleted {
     _deleteOrderId      :: {-# UNPACK #-} !UInt64
 
   -- Flags         | 14     | 1      | Bit Field | Bit | Name       | Meaning
-  --                                             | 5   | Firm Quote | No=0
-  --                                                                | Yes=1
-  , _deleteFlags        :: {-# UNPACK #-} !Byte
+  --                                             | 5   | Firm Quote | 0:No
+  --                                             |     |            | 1:Yes
+  , _deleteFlags        :: {-# UNPACK #-} !FirmQuote
 
   -- InstrumentID  | 15     | 4      | UInt32    | Instrument Identifier.
   , _deleteInstrumentId :: {-# UNPACK #-} !UInt32
@@ -293,4 +338,53 @@ instance Arbitrary OrderDeleted where
     = OrderDeleted <$> arbitrary
                    <*> arbitrary
                    <*> arbitrary
+
+-- * 4.9.8. Order Modified (Hex: 0x55 == 'U' )
+--
+-- | Field         | Offset | Length | Type      | Description
+--  -----------------------------------------------------------
+data OrderModified = OrderModified {
+  -- Order ID      | 6      | 8      | UInt64    | Identifier for the order.
+    _modifyOrderId         :: {-# UNPACK #-} !UInt64
+
+  -- New Quantity  | 14     | 4      | UInt32    | New displayed quantity of the order.
+  , _modifyNewQuantity     :: {-# UNPACK #-} !UInt32
+
+  -- New Price     | 18     | 8      | Price     | New limit price of the order.
+  , _modifyNewPrice        :: {-# UNPACK #-} !Price
+
+  -- Flags         | 26     | 1      | Bit Field | Bit | Name       | Meaning
+  --                                             | 0   | Priority   | 0:Priority lost
+  --                                             |     | Flag       | 1:Priority retained
+  --                                             | 5   | Firm Quote | 0:No
+  --                                                                | 1:Yes
+  , _modifyFlags        :: {-# UNPACK #-} !Byte
+
+} deriving (Eq, Show)
+
+instance MessageHeader OrderModified where
+  messageLength a
+    = fromIntegral $ sizeOf (UInt64 0) + -- Order ID
+      sizeOf (UInt32 0)                + -- New Quantity
+      sizeOf (UInt64 0)                + -- New Price
+      sizeOf (0 :: Byte)                 -- Flags
+  messageType a = 0x55 -- U
+
+instance Binary OrderModified where
+  get = OrderModified <$> get
+                      <*> get
+                      <*> get
+                      <*> get
+  put OrderModified {..} =
+    put _modifyOrderId     *>
+    put _modifyNewQuantity *>
+    put _modifyNewPrice    *>
+    put _modifyFlags
+
+instance Arbitrary OrderModified where
+  arbitrary
+    = OrderModified <$> arbitrary
+                    <*> arbitrary
+                    <*> arbitrary
+                    <*> arbitrary
 
