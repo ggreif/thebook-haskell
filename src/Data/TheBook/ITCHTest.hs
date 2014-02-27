@@ -41,6 +41,10 @@ qcProps = testGroup "(checked by QuickCheck)"
   , QC.testProperty "length (OrderBookClear) == 7" bookClearMessageLengthProp
   , QC.testProperty "decode (encode (OrderBookClear)) == OrderBookClear" (messageBinaryProp :: ITCH.OrderBookClear -> Bool)
   , QC.testProperty "length (OrderBookClear) == length (encode (OrderBookClear))" (messageBinaryProp :: ITCH.OrderBookClear -> Bool)
+  -- OrderExecuted
+  , QC.testProperty "length (OrderExecuted) == 7" orderExecutedMessageLengthProp
+  , QC.testProperty "decode (encode (OrderExecuted)) == OrderExecuted" (messageBinaryProp :: ITCH.OrderExecuted -> Bool)
+  , QC.testProperty "length (OrderExecuted) == length (encode (OrderExecuted))" (messageBinaryProp :: ITCH.OrderExecuted -> Bool)
   ]
 
 addOrderMessageLengthProp :: ITCH.AddOrder -> Bool
@@ -54,6 +58,9 @@ orderModifiedMessageLengthProp orderDeleted = ITCH.messageLength orderDeleted ==
 
 bookClearMessageLengthProp :: ITCH.OrderBookClear -> Bool
 bookClearMessageLengthProp orderDeleted = ITCH.messageLength orderDeleted == 7
+
+orderExecutedMessageLengthProp :: ITCH.OrderExecuted -> Bool
+orderExecutedMessageLengthProp orderDeleted = ITCH.messageLength orderDeleted == 20
 
 messageBinaryProp :: (ITCH.MessageHeader a, B.Binary a, Eq a) => a -> Bool
 messageBinaryProp m = let encoded        = B.encode m

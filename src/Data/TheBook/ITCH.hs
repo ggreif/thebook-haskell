@@ -30,6 +30,7 @@ module Data.TheBook.ITCH (
   , OrderDeleted
   , OrderModified
   , OrderBookClear
+  , OrderExecuted
   ) where
 
 import Data.Bits (bit, testBit, (.|.))
@@ -227,34 +228,34 @@ messageHeaderLength
 
 -- ** 4.9.5 Add Order (Hex=0x41 == 'A')
 --
--- | Field         | Offset | Length | Type      | Description
---  -----------------------------------------------------------
+-- | Field             | Offset | Length | Type      | Description
+--  ---------------------------------------------------------------
 data AddOrder = AddOrder {
 
-  -- Order ID      | 6      | 8      | UInt64    | Unique identifier of the order.
+  -- Order ID          | 6      | 8      | UInt64    | Unique identifier of the order.
     _addOrderId      :: {-# UNPACK #-} !UInt64
 
-  -- Side          | 14     | 1      | Byte      | Value Meaning: B=Buy Order; S=Sell Order
+  -- Side              | 14     | 1      | Byte      | Value Meaning: B=Buy Order; S=Sell Order
   , _addSide         :: {-# UNPACK #-} !Side
 
-  -- Quantity      | 15     | 4      | UInt32    | Displayed quantity of the order.
+  -- Quantity          | 15     | 4      | UInt32    | Displayed quantity of the order.
   , _addQuantity     :: {-# UNPACK #-} !UInt32
 
-  -- Instrument ID | 19     | 4      | UInt32    | Instrument identifier
+  -- Instrument ID     | 19     | 4      | UInt32    | Instrument identifier
   , _addInstrumentId :: {-# UNPACK #-} !UInt32
 
-  -- Reserved      | 23     | 1      | Byte      | Reserved field
+  -- Reserved          | 23     | 1      | Byte      | Reserved field
   , _addReserved1    :: {-# UNPACK #-} !Byte
 
-  -- Reserved      | 24     | 1      | Byte      | Reserved field
+  -- Reserved          | 24     | 1      | Byte      | Reserved field
   , _addReserved2    :: {-# UNPACK #-} !Byte
 
-  -- Price         | 25     | 8      | Price     | Limit price of the order.
+  -- Price             | 25     | 8      | Price     | Limit price of the order.
   , _addPrice        :: {-# UNPACK #-} !Price
 
-  -- Flags         | 33     | 1      | Bit Field | Bit | Name         | Meaning
-  --                                             | 4   | Market Order | 0:No
-  --                                             |     |              | 1:Yes
+  -- Flags             | 33     | 1      | Bit Field | Bit | Name         | Meaning
+  --                                                 | 4   | Market Order | 0:No
+  --                                                 |     |              | 1:Yes
   , _addFlags       :: {-# UNPACK #-} !OrdType
 } deriving (Eq, Show)
 
@@ -302,19 +303,19 @@ instance Arbitrary AddOrder where
 
 -- * 4.9.7. Order Deleted (Hex: 0x44 == 'D')
 --
--- | Field         | Offset | Length | Type      | Description
---  -----------------------------------------------------------
+-- | Field             | Offset | Length | Type      | Description
+--  ---------------------------------------------------------------
 data OrderDeleted = OrderDeleted {
 
-  -- Order ID      | 6      | 8      | UInt64    | Identifier for the order.
+  -- Order ID          | 6      | 8      | UInt64    | Identifier for the order.
     _deleteOrderId      :: {-# UNPACK #-} !UInt64
 
-  -- Flags         | 14     | 1      | Bit Field | Bit | Name       | Meaning
-  --                                             | 5   | Firm Quote | 0:No
-  --                                             |     |            | 1:Yes
+  -- Flags             | 14     | 1      | Bit Field | Bit | Name       | Meaning
+  --                                                 | 5   | Firm Quote | 0:No
+  --                                                 |     |            | 1:Yes
   , _deleteFlags        :: {-# UNPACK #-} !FirmQuote
 
-  -- InstrumentID  | 15     | 4      | UInt32    | Instrument Identifier.
+  -- InstrumentID      | 15     | 4      | UInt32    | Instrument Identifier.
   , _deleteInstrumentId :: {-# UNPACK #-} !UInt32
 } deriving (Eq, Show)
 
@@ -342,23 +343,24 @@ instance Arbitrary OrderDeleted where
 
 -- * 4.9.8. Order Modified (Hex: 0x55 == 'U' )
 --
--- | Field         | Offset | Length | Type      | Description
---  -----------------------------------------------------------
+-- | Field             | Offset | Length | Type      | Description
+--  ---------------------------------------------------------------
 data OrderModified = OrderModified {
-  -- Order ID      | 6      | 8      | UInt64    | Identifier for the order.
+
+  -- Order ID          | 6      | 8      | UInt64    | Identifier for the order.
     _modifyOrderId         :: {-# UNPACK #-} !UInt64
 
-  -- New Quantity  | 14     | 4      | UInt32    | New displayed quantity of the order.
+  -- New Quantity      | 14     | 4      | UInt32    | New displayed quantity of the order.
   , _modifyNewQuantity     :: {-# UNPACK #-} !UInt32
 
-  -- New Price     | 18     | 8      | Price     | New limit price of the order.
+  -- New Price         | 18     | 8      | Price     | New limit price of the order.
   , _modifyNewPrice        :: {-# UNPACK #-} !Price
 
-  -- Flags         | 26     | 1      | Bit Field | Bit | Name       | Meaning
-  --                                             | 0   | Priority   | 0:Priority lost
-  --                                             |     | Flag       | 1:Priority retained
-  --                                             | 5   | Firm Quote | 0:No
-  --                                                                | 1:Yes
+  -- Flags             | 26     | 1      | Bit Field | Bit | Name       | Meaning
+  --                                                 | 0   | Priority   | 0:Priority lost
+  --                                                 |     | Flag       | 1:Priority retained
+  --                                                 | 5   | Firm Quote | 0:No
+  --                                                                    | 1:Yes
   , _modifyFlags        :: {-# UNPACK #-} !Byte
 } deriving (Eq, Show)
 
@@ -390,19 +392,20 @@ instance Arbitrary OrderModified where
 
 -- * 4.9.9. Order Book Clear (Hex: 0x79 == 'y' )
 --
--- | Field         | Offset | Length | Type      | Description
---  -----------------------------------------------------------
+-- | Field             | Offset | Length | Type      | Description
+--  ---------------------------------------------------------------
 data OrderBookClear = OrderBookClear {
-  -- Instrument ID | 6      | 4      | UInt32    | Instrument identifier
+
+  -- Instrument ID     | 6      | 4      | UInt32    | Instrument identifier
     _clearInstrumentId :: {-# UNPACK #-} !UInt32
 
-  -- Reserved      | 10     | 1      | Byte      | Reserved field
+  -- Reserved          | 10     | 1      | Byte      | Reserved field
   , _clearReserved1    :: {-# UNPACK #-} !Byte
 
-  -- Reserved      | 11     | 1      | Byte      | Reserved field
+  -- Reserved          | 11     | 1      | Byte      | Reserved field
   , _clearReserved2    :: {-# UNPACK #-} !Byte
 
-  -- Flags         | 12     | 1      | Bit Field | Bit | Name       | Meaning
+  -- Flags             | 12     | 1      | Bit Field | Bit | Name       | Meaning
   --                                             | 5   | Firm Quote | 0:No
   --                                             |     |            | 1:Yes
   , _clearFlags        :: {-# UNPACK #-} !FirmQuote
@@ -434,4 +437,40 @@ instance Arbitrary OrderBookClear where
                      <*> arbitrary
                      <*> arbitrary
 
+-- * 4.9.10. Order Executed (Hex: 0x45 == 'E' )
+--
+-- | Field             | Offset | Length | Type      | Description
+--  ---------------------------------------------------------------
+data OrderExecuted = OrderExecuted {
 
+  -- Order ID          | 6      | 8      | UInt64    | Identifier for the order.
+    _executeOrderId         :: {-# UNPACK #-} !UInt64
+
+  -- Executed Quantity | 14     | 4      | UInt32    | Quantity executed.
+  , _executedQuantity     :: {-# UNPACK #-} !UInt32
+
+  -- Trade Match ID    | 18     | 8      | UInt64    | Unique identifier of the trade.
+  , _executeTradeMatchId         :: {-# UNPACK #-} !UInt64
+} deriving (Eq, Show)
+
+instance MessageHeader OrderExecuted where
+  messageLength a
+    = fromIntegral $ sizeOf (UInt64 0) + -- Order ID
+      sizeOf (UInt32 0)                + -- Executed Quantity
+      sizeOf (UInt64 0)                  -- Trade Match ID
+  messageType a = 0x45 -- E
+
+instance Binary OrderExecuted where
+  get = OrderExecuted <$> get
+                      <*> get
+                      <*> get
+  put OrderExecuted {..} =
+    put _executeOrderId      *>
+    put _executedQuantity    *>
+    put _executeTradeMatchId
+
+instance Arbitrary OrderExecuted where
+  arbitrary
+    = OrderExecuted <$> arbitrary
+                    <*> arbitrary
+                    <*> arbitrary
