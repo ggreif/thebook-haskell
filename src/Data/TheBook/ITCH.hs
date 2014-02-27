@@ -29,6 +29,7 @@ module Data.TheBook.ITCH (
   , AddOrder
   , OrderDeleted
   , OrderModified
+  , OrderBookClear
   ) where
 
 import Data.Bits (bit, testBit, (.|.))
@@ -359,7 +360,6 @@ data OrderModified = OrderModified {
   --                                             | 5   | Firm Quote | 0:No
   --                                                                | 1:Yes
   , _modifyFlags        :: {-# UNPACK #-} !Byte
-
 } deriving (Eq, Show)
 
 instance MessageHeader OrderModified where
@@ -387,4 +387,51 @@ instance Arbitrary OrderModified where
                     <*> arbitrary
                     <*> arbitrary
                     <*> arbitrary
+
+-- * 4.9.9. Order Book Clear (Hex: 0x79 == 'y' )
+--
+-- | Field         | Offset | Length | Type      | Description
+--  -----------------------------------------------------------
+data OrderBookClear = OrderBookClear {
+  -- Instrument ID | 6      | 4      | UInt32    | Instrument identifier
+    _clearInstrumentId :: {-# UNPACK #-} !UInt32
+
+  -- Reserved      | 10     | 1      | Byte      | Reserved field
+  , _clearReserved1    :: {-# UNPACK #-} !Byte
+
+  -- Reserved      | 11     | 1      | Byte      | Reserved field
+  , _clearReserved2    :: {-# UNPACK #-} !Byte
+
+  -- Flags         | 12     | 1      | Bit Field | Bit | Name       | Meaning
+  --                                             | 5   | Firm Quote | 0:No
+  --                                             |     |            | 1:Yes
+  , _clearFlags        :: {-# UNPACK #-} !FirmQuote
+} deriving (Eq, Show)
+
+instance MessageHeader OrderBookClear where
+  messageLength a
+    = fromIntegral $ sizeOf (UInt32 0) + -- Instrument ID
+      sizeOf (0 :: Byte)               + -- Reserved
+      sizeOf (0 :: Byte)               + -- Reserved
+      sizeOf (0 :: Byte)                 -- Flags
+  messageType a = 0x79 -- y
+
+instance Binary OrderBookClear where
+  get = OrderBookClear <$> get
+                      <*> get
+                      <*> get
+                      <*> get
+  put OrderBookClear {..} =
+    put _clearInstrumentId *>
+    put _clearReserved1    *>
+    put _clearReserved2    *>
+    put _clearFlags
+
+instance Arbitrary OrderBookClear where
+  arbitrary
+    = OrderBookClear <$> arbitrary
+                     <*> arbitrary
+                     <*> arbitrary
+                     <*> arbitrary
+
 
