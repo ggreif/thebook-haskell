@@ -15,6 +15,7 @@ module Data.TheBook.MarketData (
   , OrdType(..)
   , FirmQuote(..)
   , Priority(..)
+  , Printable(..)
 ) where
 
 import Data.Word (Word32)
@@ -50,6 +51,13 @@ data Priority
 instance Arbitrary Priority where
   arbitrary = elements [Lost, Retained]
 
+data Printable
+  = Printable_Yes
+  | Printable_No
+  deriving (Eq, Show)
+instance Arbitrary Printable where
+  arbitrary = elements [Printable_Yes, Printable_No]
+  
 class AddOrder where
     orderId  :: Word32
     side     :: Types.Side

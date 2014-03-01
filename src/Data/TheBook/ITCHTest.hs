@@ -45,6 +45,10 @@ qcProps = testGroup "(checked by QuickCheck)"
   , QC.testProperty "length (OrderExecuted) == 7" orderExecutedMessageLengthProp
   , QC.testProperty "decode (encode (OrderExecuted)) == OrderExecuted" (messageBinaryProp :: ITCH.OrderExecuted -> Bool)
   , QC.testProperty "length (OrderExecuted) == length (encode (OrderExecuted))" (messageBinaryProp :: ITCH.OrderExecuted -> Bool)
+    -- OrderExecutedWithPriceSize
+  , QC.testProperty "length (OrderExecutedWithPriceSize) == 33" orderExecutedWithPriceSizeMessageLengthProp
+  , QC.testProperty "decode (encode (OrderExecutedWithPriceSize)) == OrderExecutedWithPriceSize" (messageBinaryProp :: ITCH.OrderExecutedWithPriceSize -> Bool)
+  , QC.testProperty "length (OrderExecutedWithPriceSize) == length (encode (OrderExecutedWithPriceSize))" (messageBinaryProp :: ITCH.OrderExecutedWithPriceSize -> Bool)
   ]
 
 addOrderMessageLengthProp :: ITCH.AddOrder -> Bool
@@ -61,6 +65,9 @@ bookClearMessageLengthProp orderDeleted = ITCH.messageLength orderDeleted == 7
 
 orderExecutedMessageLengthProp :: ITCH.OrderExecuted -> Bool
 orderExecutedMessageLengthProp orderDeleted = ITCH.messageLength orderDeleted == 20
+
+orderExecutedWithPriceSizeMessageLengthProp :: ITCH.OrderExecutedWithPriceSize -> Bool
+orderExecutedWithPriceSizeMessageLengthProp orderDeleted = ITCH.messageLength orderDeleted == 33
 
 messageBinaryProp :: (ITCH.MessageHeader a, B.Binary a, Eq a) => a -> Bool
 messageBinaryProp m = let encoded        = B.encode m

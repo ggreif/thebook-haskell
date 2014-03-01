@@ -31,6 +31,7 @@ module Data.TheBook.ITCH (
   , OrderModified
   , OrderBookClear
   , OrderExecuted
+  , OrderExecutedWithPriceSize
   ) where
 
 import Data.Bits (bit, testBit, (.|.))
@@ -162,6 +163,17 @@ instance Binary ModifyFlags where
                                | otherwise                 -> error "This is impossible"
       in put (priorityBinary .|. firmQuoteBinary)
 
+newtype Printable = Printable Types.Printable
+  deriving (Eq, Show, Arbitrary)
+instance Binary Printable where
+  get = do
+    printable <- get
+    if | printable == _Printable_Yes     -> return $ Printable Types.Printable_Yes
+       | printable == _Printable_No      -> return $ Printable Types.Printable_No
+       | otherwise                       -> fail "Unknown printable"
+  put (Printable printable) = put $ if | printable == Types.Printable_Yes     -> _Printable_Yes
+                                       | printable == Types.Printable_No      -> _Printable_No
+                                       | otherwise                            -> error "This is impossible"
 -- | Buy order
 _B :: Byte
 _B = 0x42
@@ -188,6 +200,12 @@ _Priority_Lost = 0x0
 _Priority_Retained :: Word8
 _Priority_Retained = bit 0
 
+_Printable_Yes :: Byte
+_Printable_Yes = 0x59
+
+_Printable_No :: Byte
+_Printable_No = 0x4E
+
 -- | Zero byte
 _0 :: Word8
 _0 = 0x0
@@ -206,7 +224,7 @@ _0 = 0x0
 -- Defines the message type and length.
 
 -- | Message header
-class MessageHeader a where
+class Binary a => MessageHeader a where
   messageLength :: a -> UInt8
   messageType   :: a -> Byte
 
@@ -258,6 +276,7 @@ data AddOrder = AddOrder {
   --                                                 | 4   | Market Order | 0:No
   --                                                 |     |              | 1:Yes
   , _addFlags       :: {-# UNPACK #-} !OrdType
+
 } deriving (Eq, Show)
 
 instance MessageHeader AddOrder where
@@ -319,6 +338,7 @@ data OrderDeleted = OrderDeleted {
 
   -- InstrumentID      | 15     | 4      | UInt32    | Instrument Identifier.
   , _deleteInstrumentId :: {-# UNPACK #-} !UInt32
+
 } deriving (Eq, Show)
 
 instance MessageHeader OrderDeleted where
@@ -366,6 +386,7 @@ data OrderModified = OrderModified {
   --                                                 | 5   | Firm Quote | 0:No
   --                                                                    | 1:Yes
   , _modifyFlags        :: {-# UNPACK #-} !Byte
+
 } deriving (Eq, Show)
 
 instance MessageHeader OrderModified where
@@ -411,9 +432,10 @@ data OrderBookClear = OrderBookClear {
   , _clearReserved2    :: {-# UNPACK #-} !Byte
 
   -- Flags             | 12     | 1      | Bit Field | Bit | Name       | Meaning
-  --                                             | 5   | Firm Quote | 0:No
-  --                                             |     |            | 1:Yes
+  --                                                 | 5   | Firm Quote | 0:No
+  --                                                 |     |            | 1:Yes
   , _clearFlags        :: {-# UNPACK #-} !FirmQuote
+
 } deriving (Eq, Show)
 
 instance MessageHeader OrderBookClear where
@@ -451,13 +473,13 @@ instance Arbitrary OrderBookClear where
 data OrderExecuted = OrderExecuted {
 
   -- Order ID          | 6      | 8      | UInt64    | Identifier for the order.
-    _executeOrderId         :: {-# UNPACK #-} !UInt64
+    _executeOrderId      :: {-# UNPACK #-} !UInt64
 
   -- Executed Quantity | 14     | 4      | UInt32    | Quantity executed.
-  , _executedQuantity     :: {-# UNPACK #-} !UInt32
+  , _executedQuantity    :: {-# UNPACK #-} !UInt32
 
   -- Trade Match ID    | 18     | 8      | UInt64    | Unique identifier of the trade.
-  , _executeTradeMatchId         :: {-# UNPACK #-} !UInt64
+  , _executeTradeMatchId :: {-# UNPACK #-} !UInt64
 } deriving (Eq, Show)
 
 instance MessageHeader OrderExecuted where
@@ -481,3 +503,69 @@ instance Arbitrary OrderExecuted where
     = OrderExecuted <$> arbitrary
                     <*> arbitrary
                     <*> arbitrary
+
+-- * 4.9.10. Order Executed With Price/Size (Hex: 0x43 == 'C' )
+-- Sent if a displayed order is fully or partially filled at
+-- a price that is different from its displayed price.
+-- The executed quantity and price is included in the
+-- message along with an indication of whether the
+-- trade should update time and sales and statistics
+-- displays.
+--
+-- | Field             | Offset | Length | Type      | Description
+--  ---------------------------------------------------------------
+data OrderExecutedWithPriceSize = OrderExecutedWithPriceSize {
+
+  -- Order ID          | 6      | 8      | UInt64    | Identifier for the order.
+    _executeWithPriceSizeOrderId          :: {-# UNPACK #-} !UInt64
+
+  -- Executed Quantity | 14     | 4      | UInt32    | Quantity executed.
+  , _executedWithPriceSizeQuantity        :: {-# UNPACK #-} !UInt32
+
+  -- Display Quantity  | 18     | 4      | UInt32    | Displayed quantity of the order after the execution.
+  , _executedWithPriceSizeDisplayQuantity :: {-# UNPACK #-} !UInt32
+
+  -- Trade Match ID    | 22     | 8      | UInt64    | Unique identifier of the trade.
+  , _executedWithPriceSizeTradeMatchId    :: {-# UNPACK #-} !UInt64
+
+  -- Printable         | 30     | 1      | Byte      | Value Meaning: N=Non-Printable; Y=Printable
+  , _executedWithPriceSizePrintable       :: {-# UNPACK #-} !Printable
+
+  -- Price             | 31     | 8      | Price     | Price at which the order was executed.
+  , _executedWithPriceSizePrice           :: {-# UNPACK #-} !Price
+
+} deriving (Eq, Show)
+
+instance MessageHeader OrderExecutedWithPriceSize where
+  messageLength a
+    = fromIntegral $ sizeOf (UInt64 0) + -- Order ID
+      sizeOf (UInt32 0)                + -- Executed Quantity
+      sizeOf (UInt32 0)                + -- Display Quantity
+      sizeOf (UInt64 0)                + -- Trade Match ID
+      sizeOf (0 :: Byte)               + -- Printable
+      sizeOf (UInt64 0)                  -- Price
+  messageType a = 0x43 -- C
+
+instance Binary OrderExecutedWithPriceSize where
+  get = OrderExecutedWithPriceSize <$> get
+                                   <*> get
+                                   <*> get
+                                   <*> get
+                                   <*> get
+                                   <*> get
+  put OrderExecutedWithPriceSize {..} =
+    put _executeWithPriceSizeOrderId          *>
+    put _executedWithPriceSizeQuantity        *>
+    put _executedWithPriceSizeDisplayQuantity *>
+    put _executedWithPriceSizeTradeMatchId    *>
+    put _executedWithPriceSizePrintable       *>
+    put _executedWithPriceSizePrice
+
+instance Arbitrary OrderExecutedWithPriceSize where
+  arbitrary
+    = OrderExecutedWithPriceSize <$> arbitrary
+                                 <*> arbitrary
+                                 <*> arbitrary
+                                 <*> arbitrary
+                                 <*> arbitrary
+                                 <*> arbitrary
