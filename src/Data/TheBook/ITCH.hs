@@ -227,6 +227,7 @@ messageHeaderLength
 -- $applicationMessages
 
 -- ** 4.9.5 Add Order (Hex=0x41 == 'A')
+-- Sent to indicate that an anonymous limit or market order is added to the order book.
 --
 -- | Field             | Offset | Length | Type      | Description
 --  ---------------------------------------------------------------
@@ -302,6 +303,7 @@ instance Arbitrary AddOrder where
                <*> arbitrary
 
 -- * 4.9.7. Order Deleted (Hex: 0x44 == 'D')
+-- Sent to indicate that the remainder of a displayed order is cancelled.
 --
 -- | Field             | Offset | Length | Type      | Description
 --  ---------------------------------------------------------------
@@ -342,6 +344,8 @@ instance Arbitrary OrderDeleted where
                    <*> arbitrary
 
 -- * 4.9.8. Order Modified (Hex: 0x55 == 'U' )
+-- Indicates that the displayed quantity or price of a displayed order has been updated. The message
+-- will include an indication whether the order has retained or lost its time priority.
 --
 -- | Field             | Offset | Length | Type      | Description
 --  ---------------------------------------------------------------
@@ -391,6 +395,7 @@ instance Arbitrary OrderModified where
                     <*> arbitrary
 
 -- * 4.9.9. Order Book Clear (Hex: 0x79 == 'y' )
+-- Sent to instruct recipients to remove all orders from the order book for the specified instrument.
 --
 -- | Field             | Offset | Length | Type      | Description
 --  ---------------------------------------------------------------
@@ -438,6 +443,8 @@ instance Arbitrary OrderBookClear where
                      <*> arbitrary
 
 -- * 4.9.10. Order Executed (Hex: 0x45 == 'E' )
+-- Indicates that the displayed portion of an order is fully or partially
+-- filled at its displayed price. The executed quantity is included in the message.
 --
 -- | Field             | Offset | Length | Type      | Description
 --  ---------------------------------------------------------------
