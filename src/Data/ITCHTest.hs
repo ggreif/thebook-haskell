@@ -1,14 +1,14 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Data.TheBook.ITCHTest
+-- Module      :  Data.ITCHTest
 -- Copyright   :  (c) 2014, Jakub Kozlowski
 -- License     :  MIT
 --
 -- Maintainer  :  mail@jakub-kozlowski.com
 --
--- Tests 'Data.TheBook.ITCH'.
+-- Tests 'Data.ITCH'.
 -----------------------------------------------------------------------------
-module Data.TheBook.ITCHTest (tests) where
+module Data.ITCHTest (tests) where
 
 import qualified Data.Binary as B
 import qualified Data.ByteString.Lazy as L
@@ -17,7 +17,7 @@ import Test.Tasty.QuickCheck as QC
 import Test.Tasty.HUnit
 import Data.List
 import Data.Ord
-import qualified Data.TheBook.ITCH as ITCH
+import qualified Data.ITCH as ITCH
 import Debug.Trace (traceShow)
 
 tests :: TestTree

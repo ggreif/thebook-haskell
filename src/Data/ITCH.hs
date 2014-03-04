@@ -5,7 +5,7 @@
 {-# LANGUAGE DataKinds #-}
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Data.TheBook.ITCH
+-- Module      :  Data.ITCH
 -- Copyright   :  (c) 2014, Jakub Kozlowski
 -- License     :  MIT
 --
@@ -21,7 +21,7 @@
 -- corresponding 'Data.TheBook.MarketData' messages, in order to improve on memory
 -- allocation.
 -----------------------------------------------------------------------------
-module Data.TheBook.ITCH (
+module Data.ITCH (
     -- | Message header
     MessageHeader, messageLength, messageType, messageHeaderLength
 

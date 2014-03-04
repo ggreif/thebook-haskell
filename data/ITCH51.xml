@@ -1,0 +1,193 @@
+<MITCH>
+<msgs namespace="exchange">
+  <msg name="ITCH Add Order" msgtype="0x41">
+    <fld name="ITCH Nanosecond" datatype="UInt32" />
+    <fld name="ITCH Order ID" datatype="UInt64" />
+    <fld name="ITCH Side" datatype="Byte" />
+    <fld name="ITCH Quantity" datatype="UInt32" />
+    <fld name="LSE ITCH Instrument ID" datatype="UInt32" />
+    <fld name="ITCH Reserved 1" datatype="Byte" />
+    <fld name="ITCH Reserved 2" datatype="Byte" />
+    <fld name="ITCH Price" datatype="Price" length="8" decimal_points="8" />
+    <fld name="ITCH Flags" datatype="BitField" />
+  </msg>
+  <msg name="ITCH Add Attributed Order" msgtype="0x46">
+	<fld name="ITCH Nanosecond" datatype="UInt32" />
+	<fld name="ITCH Order ID" datatype="UInt64" />
+	<fld name="ITCH Side" datatype="Byte" />
+	<fld name="ITCH Quantity" datatype="UInt32" />
+	<fld name="LSE ITCH Instrument ID" datatype="UInt32" />
+	<fld name="ITCH Reserved 1" datatype="Byte" />
+	<fld name="ITCH Reserved 2" datatype="Byte" />
+	<fld name="ITCH Price" datatype="Price" length="8" decimal_points="8" />
+	<fld name="ITCH Attribution" datatype="Alpha" length="11"/>
+	<fld name="ITCH Flags" datatype="BitField" />
+  </msg>
+   <msg name="ITCH Order Deleted" msgtype="0x44">
+	<fld name="ITCH Nanosecond" datatype="UInt32" />
+	<fld name="ITCH Order ID" datatype="UInt64" />
+	<fld name="ITCH Flags" datatype="BitField" />
+  </msg>
+  <msg name="ITCH Order Modified" msgtype="0x55">
+	<fld name="ITCH Nanosecond" datatype="UInt32" />
+	<fld name="ITCH Order ID" datatype="UInt64" />
+	<fld name="ITCH New Quantity" datatype="UInt32" />
+	<fld name="ITCH New Price" datatype="Price" length="8" decimal_points="8" />
+	<fld name="ITCH Flags" datatype="BitField" />
+  </msg>
+  <msg name="ITCH Order Book Clear" msgtype="0x79">
+	<fld name="ITCH Nanosecond" datatype="UInt32" />
+	<fld name="LSE ITCH Instrument ID" datatype="UInt32" />
+	<fld name="ITCH Reserved 1" datatype="Byte" />
+	<fld name="ITCH Reserved 2" datatype="Byte" />
+	<fld name="ITCH Flags" datatype="BitField" />
+ </msg>
+   <msg name="ITCH Time" msgtype="0x54">
+	<fld name="ITCH Seconds" datatype="UInt32" />
+  </msg>
+  <msg name="ITCH Login Request" msgtype="0x01">
+	<fld name="ITCH Username" datatype="Alpha" length="6" />
+	<fld name="ITCH Password" datatype="Alpha" length="10" />
+  </msg>
+  <msg name="ITCH Replay Request" msgtype="0x03">
+	<fld name="ITCH Market Data Group" datatype="Byte" />
+	<fld name="ITCH First Message" datatype="UInt32" />
+	<fld name="ITCH Count" datatype="UInt16" />
+  </msg>
+  <msg name="ITCH Snapshot Request" msgtype="0x81">
+	<fld name="ITCH Sequence Number" datatype="UInt32" />
+	<fld name="ITCH Segment" datatype="Alpha" length="6" />
+	<fld name="LSE ITCH Instrument ID" datatype="UInt32" />
+  </msg>
+  <msg name="ITCH Logout Request" msgtype="0x05">
+  </msg>
+  <msg name="ITCH Login Response" msgtype="0x02">
+	<fld name="ITCH Status" datatype="Byte" />
+  </msg>
+  <msg name="ITCH Replay Response" msgtype="0x04">
+	<fld name="ITCH Market Data Group" datatype="Byte" />
+	<fld name="ITCH First Message" datatype="UInt32" />
+	<fld name="ITCH Count" datatype="UInt16" />
+	<fld name="ITCH Status" datatype="Byte" />
+  </msg>
+  <msg name="ITCH Snapshot Response" msgtype="0x82">
+	<fld name="ITCH Sequence Number" datatype="UInt32" />
+	<fld name="ITCH Order Count" datatype="UInt32" />
+	<fld name="ITCH Status" datatype="Byte" />
+  </msg>
+  <msg name="ITCH Snapshot Complete" msgtype="0x83">
+	<fld name="ITCH Sequence Number" datatype="UInt32" />
+	<fld name="ITCH Segment" datatype="Alpha" length="6" />
+	<fld name="LSE ITCH Instrument ID" datatype="UInt32" />
+	<fld name="ITCH Flags" datatype="BitField" />
+  </msg>
+  <msg name="ITCH System Event" msgtype="0x53">
+	<fld name="ITCH Nanosecond" datatype="UInt32" />
+	<fld name="ITCH Event Code" datatype="Byte" />
+  </msg>
+  <msg name="ITCH Symbol Directory" msgtype="0x52">
+	<fld name="ITCH Nanosecond" datatype="UInt32" />
+	<fld name="LSE ITCH Instrument ID" datatype="UInt32" />
+	<fld name="ITCH Reserved 1" datatype="Byte" />
+	<fld name="ITCH Reserved 2" datatype="Byte" />
+	<fld name="ITCH Symbol Status" datatype="Alpha" length="1" />
+	<fld name="ITCH ISIN" datatype="Alpha" length="12" />
+	<fld name="ITCH SEDOL" datatype="Alpha" length="12" />
+	<fld name="ITCH Segment" datatype="Alpha" length="6" />
+	<fld name="ITCH Underlying" datatype="Alpha" length="6" />
+	<fld name="ITCH Currency" datatype="Alpha" length="3" />
+	<fld name="ITCH Target Book" datatype="Byte" />
+	<fld name="ITCH Security Exchange" datatype="Alpha" length="4" />
+  <fld name="ITCH Previous Close Price" datatype="Price" length="8" decimal_points="8" />
+  </msg>
+  <msg name="ITCH Symbol Status" msgtype="0x48">
+	<fld name="ITCH Nanosecond" datatype="UInt32" />
+	<fld name="LSE ITCH Instrument ID" datatype="UInt32" />
+	<fld name="ITCH Reserved 1" datatype="Byte" />
+	<fld name="ITCH Reserved 2" datatype="Byte" />
+	<fld name="ITCH Trading Status" datatype="Byte" />
+	<fld name="ITCH Flags" datatype="BitField" />
+	<fld name="ITCH Halt Reason" datatype="Alpha" length="4" />
+	<fld name="ITCH Session Change Reason" datatype="UInt8" />
+	<fld name="ITCH New End Time" datatype="Time" length="8" />
+ 	<fld name="ITCH Book Type" datatype="UInt8" />
+  </msg>
+  <msg name="ITCH Order Executed" msgtype="0x45">
+	<fld name="ITCH Nanosecond" datatype="UInt32" />
+	<fld name="ITCH Order ID" datatype="UInt64" />
+	<fld name="ITCH Executed Quantity" datatype="UInt32" />
+	<fld name="ITCH Trade ID" datatype="UInt64" />
+  </msg>
+  <msg name="ITCH Order Executed With Price" msgtype="0x43">
+	<fld name="ITCH Nanosecond" datatype="UInt32" />
+	<fld name="ITCH Order ID" datatype="UInt64" />
+	<fld name="ITCH Executed Quantity" datatype="UInt32" />
+	<fld name="ITCH Display Quantity" datatype="UInt32" />
+	<fld name="ITCH Trade ID" datatype="UInt64" />
+	<fld name="ITCH Printable" datatype="Byte" />
+	<fld name="ITCH Price" datatype="Price" length="8" decimal_points="8" />
+  </msg>
+  <msg name="ITCH Trade" msgtype="0x50">
+	<fld name="ITCH Nanosecond" datatype="UInt32" />
+	<fld name="ITCH Executed Quantity" datatype="UInt32" />
+	<fld name="LSE ITCH Instrument ID" datatype="UInt32" />
+	<fld name="ITCH Reserved 1" datatype="Byte" />
+	<fld name="ITCH Reserved 2" datatype="Byte" />
+	<fld name="ITCH Price" datatype="Price" length="8" decimal_points="8" />
+	<fld name="ITCH Trade ID" datatype="UInt64" />
+	<fld name="ITCH Side Of Aggressor" datatype="Byte" />
+  </msg>
+  <msg name="ITCH Auction Trade" msgtype="0x51">
+	<fld name="ITCH Nanosecond" datatype="UInt32" />
+	<fld name="ITCH Quantity" datatype="UInt32" />
+	<fld name="LSE ITCH Instrument ID" datatype="UInt32" />
+	<fld name="ITCH Reserved 1" datatype="Byte" />
+	<fld name="ITCH Reserved 2" datatype="Byte" />
+	<fld name="ITCH Price" datatype="Price" length="8" decimal_points="8" />
+	<fld name="ITCH Trade ID" datatype="UInt64" />
+	<fld name="ITCH Auction Type" datatype="Byte" />
+  </msg>
+  <msg name="ITCH Trade Break" msgtype="0x42">
+	<fld name="ITCH Nanosecond" datatype="UInt32" />
+	<fld name="ITCH Trade ID" datatype="UInt64" />
+	<fld name="ITCH Trade Type" datatype="Byte" />
+  </msg>
+  <msg name="ITCH Auction Info" msgtype="0x49">
+	<fld name="ITCH Nanosecond" datatype="UInt32" />
+	<fld name="ITCH Paired Quantity" datatype="UInt32" />
+	<fld name="ITCH Imbalance Quantity" datatype="UInt32" />
+	<fld name="ITCH Imbalance Direction" datatype="Byte" />
+	<fld name="LSE ITCH Instrument ID" datatype="UInt32" />
+	<fld name="ITCH Reserved 1" datatype="Byte" />
+	<fld name="ITCH Reserved 2" datatype="Byte" />
+	<fld name="ITCH Price" datatype="Price" length="8" decimal_points="8" />
+	<fld name="ITCH Auction Type" datatype="Byte" />
+  </msg>
+  <msg name="ITCH Off Book Trade" msgtype="0x78">
+	<fld name="ITCH Nanosecond" datatype="UInt32" />
+	<fld name="ITCH Executed Quantity" datatype="UInt32" />
+	<fld name="LSE ITCH Instrument ID" datatype="UInt32" />
+	<fld name="ITCH Reserved 1" datatype="Byte" />
+	<fld name="ITCH Reserved 2" datatype="Byte" />
+	<fld name="ITCH Price" datatype="Price" length="8" decimal_points="8" />
+	<fld name="ITCH Trade ID" datatype="UInt64" />
+	<fld name="ITCH Off Book Trade Type" datatype="Alpha" length="4" />
+	<fld name="ITCH Trade Time" datatype="Time" length="8" />
+	<fld name="ITCH Trade Date" datatype="Date" length="8" />
+	<fld name="ITCH Traded Currency" datatype="Alpha" length="4" />
+	<fld name="ITCH Original Price" datatype="Price" length="8" decimal_points="8" />
+	<fld name="ITCH Execution Venue" datatype="Alpha" length="5" />
+	<fld name="ITCH Flags" datatype="BitField" />
+  </msg>
+  <msg name="ITCH Statistics" msgtype="0x77">
+        <fld name="ITCH Nanosecond" datatype="UInt32" />
+        <fld name="LSE ITCH Instrument ID" datatype="UInt32"/>
+        <fld name="ITCH Reserved 1" datatype="Byte" />
+        <fld name="ITCH Reserved 2" datatype="Byte" />
+	<fld name="LSEG ITCH Statistics Type" datatype="Alpha" length="1" />
+        <fld name="ITCH Price" datatype="Price" length="8" decimal_points="8" />
+	<fld name="ITCH Open Close Price Indicator" datatype="Alpha" length="1" />
+	<fld name="ITCH Flags" datatype="BitField" />
+  </msg>
+</msgs>
+</MITCH>
