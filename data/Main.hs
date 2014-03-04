@@ -17,7 +17,7 @@ import qualified Text.XML as XML
 import Text.XML (Node, Element, elementAttributes)
 import Text.XML.Cursor (fromNode, node, attribute, fromDocument, child, element, descendant, content,  ($/), (&//), (&/), (&|))
 import qualified Data.ByteString as B
-import Language.Haskell.Exts
+import Language.Haskell.Exts ()
 import System.Environment (getArgs)
 import Text.Read (readMaybe)
 
@@ -45,11 +45,14 @@ onElement :: (XML.Element -> Maybe a) -> XML.Node -> Maybe a
 onElement f (XML.NodeElement e) = f e
 onElement _ _ = Nothing
 
+lookupRead :: Read a => XML.Name -> Map XML.Name Text -> Maybe a
+lookupRead name attrs = readMaybe . T.unpack =<< M.lookup name attrs
+
 -- | Tries to parse 'Message' from 'XML.Element'.
 parseMessage :: XML.Element -> Maybe Message
 parseMessage e@(XML.Element _ attrs fields)
   = Message <$> M.lookup "name" attrs
-            <*> (readMaybe . T.unpack =<< M.lookup "msgtype" attrs)
+            <*> lookupRead "msgtype" attrs
             <*> pure (catMaybes $ map navigate fields)
     where navigate :: XML.Node -> Maybe Field
           navigate = onElement parseField
@@ -58,7 +61,22 @@ parseMessage e@(XML.Element _ attrs fields)
 parseField :: XML.Element -> Maybe Field
 parseField (XML.Element _ attrs _)
   = Field <$> M.lookup "name" attrs
-          <*> (readMaybe . T.unpack =<< M.lookup "datatype" attrs)
+          <*> (parseType attrs =<< M.lookup "datatype" attrs)
+
+-- | Attempts to parse 'FieldType' from attributes.
+parseType :: Map XML.Name Text -> Text -> Maybe FieldType
+parseType _ "UInt8"     = Just UInt8
+parseType _ "UInt16"    = Just UInt16
+parseType _ "UInt32"    = Just UInt32
+parseType _ "UInt64"    = Just UInt64
+parseType _ "Byte"      = Just Byte
+parseType attrs "Price" = Price <$> lookupRead "length" attrs
+                                <*> lookupRead "decimal_points" attrs
+parseType _ "BitField"  = Just BitField
+parseType attrs "Alpha" = Alpha <$> lookupRead "length" attrs
+parseType attrs "Date"  = Date <$> lookupRead "length" attrs
+parseType attrs "Time"  = Time <$> lookupRead "length" attrs
+parseType _ _           = Nothing
 
 main :: IO ()
 main = do
