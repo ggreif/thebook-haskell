@@ -21,12 +21,15 @@
 -- corresponding 'Data.TheBook.MarketData' messages, in order to improve on memory
 -- allocation.
 -----------------------------------------------------------------------------
-module Data.ITCH (
+module Data.ITCH.Types (
     -- | Message header
     MessageHeader, messageLength, messageType, messageHeaderLength
 
+    -- | Types
+  , UInt8, UInt16, UInt32, UInt64, Byte, Price, BitField
+
     -- | Messages
-  , AddOrder
+  ,  AddOrder
   , OrderDeleted
   , OrderModified
   , OrderBookClear

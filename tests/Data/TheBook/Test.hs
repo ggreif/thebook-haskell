@@ -11,7 +11,7 @@
 module Data.TheBook.Test where
 
 import qualified Data.TheBook.BookTest as BookTest
-import qualified Data.ITCHTest as ITCHTest
+import qualified Data.ITCH.TypesTest as ITCHTest
 import Test.Tasty
 import Test.Tasty.QuickCheck as QC
 import Test.Tasty.HUnit

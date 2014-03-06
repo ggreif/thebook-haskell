@@ -9,6 +9,7 @@ import Control.Applicative ((<$>), (<*>), (<*), (<|>), pure)
 import Control.Monad ((=<<))
 import Data.Char (toLower)
 import Data.Map (Map)
+import Data.Monoid ((<>))
 import qualified Data.Map as M
 import Data.Maybe (catMaybes)
 import qualified Text.XML as XML
@@ -17,6 +18,8 @@ import Text.XML.Cursor (fromNode, node, attribute, fromDocument, child, element,
 import qualified Data.ByteString as B
 import Language.Haskell.Exts hiding (parseType)
 import System.Environment (getArgs)
+import System.FilePath (joinPath)
+import System.IO (hFlush, stdout)
 import Text.Read (readMaybe)
 
 -- | A single ITCH message.
@@ -82,15 +85,45 @@ srcLoc = SrcLoc {srcFilename = "foo.hs", srcLine = 1, srcColumn = 1}
 fixName :: Text -> Text
 fixName = T.replace "ITCH" "" . T.replace " " ""
 
+fixNameCamel :: Text -> Text
+fixNameCamel n = if T.length n > 0
+                  then let fixedName = fixName n
+                       in  T.cons (toLower . T.head $ fixedName) (T.drop 1 fixedName)
+                  else n
+
+fieldTypeToName :: FieldType -> Name
+fieldTypeToName ft = case ft of
+  UInt8        -> Ident "UInt8"
+  UInt16       -> Ident "UInt8"
+  UInt32       -> Ident "UInt32"
+  UInt64       -> Ident "UInt64"
+  Byte         -> Ident "Byte"
+  Price _ _    -> Ident "Data.Decimal"
+  BitField     -> Ident "BitField"
+  Alpha length -> Ident "Data.ByteString.Char8.ByteString"
+  Date _       -> Ident "Data.Time.Calendar.Day"
+  Time _       -> Ident "Data.Time.Clock.DiffTime"
+
+fieldDecl :: Message -> Field -> ([Name], BangType)
+fieldDecl (Message msg _ _) (Field name t) =
+  let fieldName = Ident . T.unpack $ "_" <> fixNameCamel msg <> fixName name
+  in ([fieldName], UnpackedTy . TyCon . UnQual . fieldTypeToName $ t)
+
+--strongFIXTyCon :: Field -> Type
+--strongFIXTyCon f@(Field name t) =
+--  let fieldTy   = foldl1 TyApp [TyCon fieldQN, TyCon (typeNat fieldID), TyCon (strongFIXQName f)]
+--      fieldQN
+--        | isEnumField f = Qual (ModuleName "AlphaHeavy.FIX") $ Ident "Enumeration"
+--        | otherwise     = Qual (ModuleName "AlphaHeavy.FIX") $ Ident "Field"
+--      optField
+--        | requiredField = id
+--        | otherwise     = TyApp (TyCon (Qual (ModuleName "Prelude") (Ident "Maybe")))
+--  in optField fieldTy
+
 recordDecl :: Message -> ConDecl
-recordDecl (Message name _ fields) = ConDecl ident []
-  where ident        = Ident (T.unpack (fixName name))
-        --args         = map x fields
-        --grp fty      = UnBangedTy $ strongFIXTyCon fty
-        --ty True fty  = UnBangedTy $ strongFIXTyCon fty
-        --ty False fty = unbangedMaybeFIXTyCon fty
-        --x (g@Group{}, _)   = grp g
-        --x (f@Field{}, reqd)= ty reqd f
+recordDecl m@(Message name _ fields) = RecDecl ident args
+  where ident        = Ident . T.unpack . fixName $ name
+        args         = map (fieldDecl m) fields
 
 generateMessageConDecl :: Message -> QualConDecl
 generateMessageConDecl msg = QualConDecl srcLoc tyVarBind context ctor
@@ -107,25 +140,28 @@ generateMessageDecl msgs = decl where
   tyVarBind = []
   derived   = map ((\v -> (v, [])) . UnQual . Ident) ["Generic","Show","Eq"]
 
-generateMessageModule :: [Message] -> Module
-generateMessageModule msgs = Module srcLoc modName pragmas warningText exports imports decls
-  where modName = ModuleName $ "Data.ITCH"
+generateMessageModule :: String -> [Message] -> Module
+generateMessageModule version msgs = Module srcLoc modName pragmas warningText exports imports decls
+  where modName = ModuleName $ "Data.ITCH.ITCH" <> version
         pragmas = []
         warningText = Nothing
         exports = Nothing
-        imports = []
+        imports = [
+            ImportDecl srcLoc (ModuleName "Data.ITCH.Types") False False Nothing Nothing Nothing
+          ]
         decls = messagesDecl
         messagesDecl  = [generateMessageDecl msgs]
 
 main :: IO ()
 main = do
    args <- getArgs
-   if length args /= 1
+   if length args /= 2
     then do
-      putStrLn "Usage: Main <Path-to-xml>"
+      putStrLn "Usage: Main <Path-to-xml> <Version>"
       return ()
     else do
-      let path = args !! 0
+      let path    = args !! 0
+          version = args !! 1
       -- Get the cursor
       document <- XML.readFile XML.def (fromString path)
       let cursor = fromDocument document
@@ -134,10 +170,12 @@ main = do
           messages = catMaybes $ cursor $/ element "msgs"
                                &/ element "msg" &| (onElement parseMessage) . node
 
-          types = generateMessageModule messages
+          types = generateMessageModule version messages
           ppr = prettyPrintStyleMode style defaultMode
 
-      putStrLn (ppr types)
-      print messages
+      putStr (ppr types)
+      putStrLn "Hello"
+      -- hFlush stdout
+      -- print messages
       return ()
 
