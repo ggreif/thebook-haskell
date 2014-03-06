@@ -1,0 +1,30 @@
+name:               thebook
+version:            0.1.0
+synopsis:           Exchange simulator in Haskell.
+description:        This package implements an LSE Millenium clone in Haskell.
+category:           Finance
+homepage:           https://github.com/tfausak/haskeleton
+bug-reports:        https://github.com/tfausak/haskeleton/issues
+license-file:       LICENSE
+license:            MIT
+
+author:             Jakub Kozlowski
+copyright:          2014 Jakub Kozlowski <mail@jakub-kozlowski.com>
+maintainer:         mail@jakub-kozlowski.com
+
+build-type:         Simple
+cabal-version:      >= 1.18
+extra-source-files: --CHANGELOG.md
+                    --CONTRIBUTING.md
+                    README.md
+
+source-repository head
+    location:
+        git://github.com/jkozlowski/thebook-haskell.git
+    type:
+        git
+
+flag documentation
+    default:
+        False
+
