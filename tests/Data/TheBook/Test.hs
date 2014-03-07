@@ -8,13 +8,12 @@
 --
 -- All tests.
 -----------------------------------------------------------------------------
-module Data.TheBook.Test where
+module Main where
 
 import qualified Data.TheBook.BookTest as BookTest
 import qualified Data.ITCH.TypesTest as ITCHTest
 import Test.Tasty
 import Test.Tasty.QuickCheck as QC
-import Test.Tasty.HUnit
 
 import Data.List
 import Data.Ord

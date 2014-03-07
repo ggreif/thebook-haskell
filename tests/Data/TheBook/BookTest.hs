@@ -12,7 +12,6 @@ module Data.TheBook.BookTest (tests) where
 
 import Test.Tasty
 import Test.Tasty.QuickCheck as QC
-import Test.Tasty.HUnit
 import Data.List
 import Data.Ord
 import Data.TheBook.Book as Book

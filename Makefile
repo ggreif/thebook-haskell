@@ -1,3 +1,5 @@
+CABALSANDBOX := ".cabal-sandbox"
+
 .PHONY: bench clean format haddock hpc init install repl run test
 
 all: install format hpc bench haddock run

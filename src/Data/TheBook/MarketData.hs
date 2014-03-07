@@ -1,4 +1,3 @@
-{-# LANGUAGE NullaryTypeClasses #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.TheBook.MarketData
@@ -58,8 +57,3 @@ data Printable
 instance Arbitrary Printable where
   arbitrary = elements [Printable_Yes, Printable_No]
   
-class AddOrder where
-    orderId  :: Word32
-    side     :: Types.Side
-    quantity :: Types.Qty
-

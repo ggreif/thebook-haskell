@@ -8,7 +8,7 @@
 --
 -- Exchange simulator in Haskell.
 -----------------------------------------------------------------------------
-module Data.TheBook.Main (
+module Main (
    module Types
  , main
  ) where

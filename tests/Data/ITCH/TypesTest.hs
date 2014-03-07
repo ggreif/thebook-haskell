@@ -14,7 +14,6 @@ import qualified Data.Binary as B
 import qualified Data.ByteString.Lazy as L
 import Test.Tasty
 import Test.Tasty.QuickCheck as QC
-import Test.Tasty.HUnit
 import Data.List
 import Data.Ord
 import qualified Data.ITCH.Types as ITCH
