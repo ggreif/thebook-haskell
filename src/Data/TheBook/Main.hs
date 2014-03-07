@@ -25,6 +25,7 @@ main :: IO ()
 main = do
     putStrLn "Hello World"
     putStrLn "Wassup"
+    putStrLn "Hello travis"
     print $ Book.toList (book6 :: Book Buy)
     exitSuccess
     where book1 = insert 51 100 empty :: Book.Book Book.Buy
