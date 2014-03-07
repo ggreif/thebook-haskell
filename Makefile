@@ -44,7 +44,7 @@ run:
 	cabal build
 	cabal run
 
-test:
+test: install
 	cabal configure --enable-tests
 	cabal build
 	cabal test
