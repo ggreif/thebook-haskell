@@ -1,5 +1,6 @@
 thebook-haskell
 ===============
+[![Build Status](https://travis-ci.org/jkozlowski/thebook-haskell.png?branch=master)](https://travis-ci.org/jkozlowski/thebook-haskell)
 
 Exchange simulator in Haskell
 
