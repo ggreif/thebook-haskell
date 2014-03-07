@@ -74,7 +74,7 @@ test-suite hspec
       src
       tests
   main-is:
-      Data.TheBook.Test
+      Data.TheBook.Test.hs
   other-modules:
       Data.TheBook.BookTest
     , Data.TheBook.TypesTest
