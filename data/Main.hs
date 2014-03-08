@@ -49,7 +49,7 @@ onElement _ _ = Nothing
 lookupRead :: Read a => XML.Name -> Map XML.Name Text -> Maybe a
 lookupRead name attrs = readMaybe . T.unpack =<< M.lookup name attrs
 
--- | Tries to parse 'Message' from 'XML.Element'.
+-- | Attempts to parse 'Message' from 'XML.Element'.
 parseMessage :: XML.Element -> Maybe Message
 parseMessage e@(XML.Element _ attrs fields)
   = Message <$> M.lookup "name" attrs
@@ -82,6 +82,12 @@ parseType _ _           = Nothing
 srcLoc :: SrcLoc
 srcLoc = SrcLoc {srcFilename = "foo.hs", srcLine = 1, srcColumn = 1}
 
+itchMessageADT :: Name
+itchMessageADT = Ident "ITCHMessage"
+
+-- | Names in the name tag are of the form "ITCH Add Order"
+-- This is not a valid haskell data constructor, so we need
+-- to fix that.
 fixName :: Text -> Text
 fixName = T.replace "ITCH" "" . T.replace " " ""
 
@@ -109,17 +115,6 @@ fieldDecl (Message msg _ _) (Field name t) =
   let fieldName = Ident . T.unpack $ "_" <> fixNameCamel msg <> fixName name
   in ([fieldName], UnpackedTy . TyCon . UnQual . fieldTypeToName $ t)
 
---strongFIXTyCon :: Field -> Type
---strongFIXTyCon f@(Field name t) =
---  let fieldTy   = foldl1 TyApp [TyCon fieldQN, TyCon (typeNat fieldID), TyCon (strongFIXQName f)]
---      fieldQN
---        | isEnumField f = Qual (ModuleName "AlphaHeavy.FIX") $ Ident "Enumeration"
---        | otherwise     = Qual (ModuleName "AlphaHeavy.FIX") $ Ident "Field"
---      optField
---        | requiredField = id
---        | otherwise     = TyApp (TyCon (Qual (ModuleName "Prelude") (Ident "Maybe")))
---  in optField fieldTy
-
 recordDecl :: Message -> ConDecl
 recordDecl m@(Message name _ fields) = RecDecl ident args
   where ident        = Ident . T.unpack . fixName $ name
@@ -133,24 +128,41 @@ generateMessageConDecl msg = QualConDecl srcLoc tyVarBind context ctor
 
 generateMessageDecl :: [Message] -> Decl
 generateMessageDecl msgs = decl where
-  decl      = DataDecl srcLoc DataType context name' tyVarBind decls derived
+  decl      = DataDecl srcLoc DataType context itchMessageADT tyVarBind decls derived
   decls     = map generateMessageConDecl msgs
-  name'     = Ident "ITCHMessage"
   context   = []
   tyVarBind = []
   derived   = map ((\v -> (v, [])) . UnQual . Ident) ["Generic","Show","Eq"]
+
+generateArbitraryInstance :: [Message] -> Decl
+generateArbitraryInstance msgs = decl where
+  decl = InstDecl srcLoc [] name [type'] [decls]
+  decls = InsDecl . FunBind $ [arbitraryDef]
+  arbitraryDef = Match srcLoc (Ident "arbitrary") [] Nothing arbitraryRhs (BDecls [])
+  arbitraryRhs = UnGuardedRhs $ App (Var . UnQual . Ident $ "oneof") (List (map arbitraryFunName msgs))
+  arbitraryFunName (Message msg _ _) = Var . UnQual . Ident $ T.unpack $ " arbitrary" <> fixName msg
+  name = UnQual . Ident $ "Arbitrary"
+  type' = TyCon . UnQual $ itchMessageADT
 
 generateMessageModule :: String -> [Message] -> Module
 generateMessageModule version msgs = Module srcLoc modName pragmas warningText exports imports decls
   where modName = ModuleName $ "Data.ITCH.ITCH" <> version
         pragmas = []
         warningText = Nothing
-        exports = Nothing
-        imports = [
-            ImportDecl srcLoc (ModuleName "Data.ITCH.Types") False False Nothing Nothing Nothing
+        exports = Just [
+            EThingAll . UnQual $ itchMessageADT
           ]
-        decls = messagesDecl
-        messagesDecl  = [generateMessageDecl msgs]
+        imports = [
+            importDecl "Data.ITCH.Types"
+          , importDecl "Data.Decimal"
+          , importDecl "Data.ByteString.Char8.ByteString"
+          , importDecl "Data.Time.Calendar.Day"
+          , importDecl "Data.Time.Clock.DiffTime"
+          , importDecl "Test.QuickCheck.Arbitrary"
+          , importDecl "Test.QuickCheck.Gen"
+          ]
+        decls = [generateArbitraryInstance msgs, generateMessageDecl msgs]
+        importDecl name = ImportDecl srcLoc (ModuleName name) False False Nothing Nothing Nothing
 
 main :: IO ()
 main = do
