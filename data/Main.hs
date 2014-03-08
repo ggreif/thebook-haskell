@@ -6,7 +6,7 @@ import Data.Text (Text)
 import Data.String
 import Data.Word (Word8)
 import Control.Applicative ((<$>), (<*>), (<*), (<|>), pure)
-import Control.Monad ((=<<))
+import Control.Monad ((=<<), forever)
 import Data.Char (toLower)
 import Data.Map (Map)
 import Data.Monoid ((<>))
@@ -82,6 +82,9 @@ parseType attrs "Date"  = Date  <$> lookupRead "length" attrs
 parseType attrs "Time"  = Time  <$> lookupRead "length" attrs
 parseType _ _           = Nothing
 
+srcLoc :: Hs.SrcLoc
+srcLoc = Hs.SrcLoc {Hs.srcFilename = "foo.hs", Hs.srcLine = 1, Hs.srcColumn = 1}
+
 itchMessageADT :: Hs.Name
 itchMessageADT = Hs.Ident "ITCHMessage"
 
@@ -125,14 +128,14 @@ recordDecl m@(Message name _ fields) = Hs.RecDecl ident args
         args         = map (fieldDecl m) fields
 
 generateMessageConDecl :: Message -> Hs.QualConDecl
-generateMessageConDecl msg = Hs.QualConDecl Hs.noLoc tyVarBind context ctor
+generateMessageConDecl msg = Hs.QualConDecl srcLoc tyVarBind context ctor
   where tyVarBind = []
         context   = []
         ctor      = recordDecl msg
 
 generateMessageDecl :: [Message] -> Hs.Decl
 generateMessageDecl msgs = decl where
-  decl      = Hs.DataDecl Hs.noLoc Hs.DataType context itchMessageADT tyVarBind decls derived
+  decl      = Hs.DataDecl srcLoc Hs.DataType context itchMessageADT tyVarBind decls derived
   decls     = map generateMessageConDecl msgs
   context   = []
   tyVarBind = []
@@ -143,9 +146,9 @@ arbitraryFunctionName (Message msg _ _) = T.unpack $ " arbitrary" <> fixName msg
 
 generateArbitraryInstance :: [Message] -> Hs.Decl
 generateArbitraryInstance msgs = decl where
-  decl = Hs.InstDecl Hs.noLoc [] name [type'] [decls]
+  decl = Hs.InstDecl srcLoc [] name [type'] [decls]
   decls = Hs.InsDecl . Hs.FunBind $ [arbitraryDef]
-  arbitraryDef = Hs.Match Hs.noLoc (Hs.name "arbitrary") [] Nothing arbitraryRhs (Hs.BDecls [])
+  arbitraryDef = Hs.Match srcLoc (Hs.name "arbitrary") [] Nothing arbitraryRhs (Hs.BDecls [])
   arbitraryRhs = Hs.UnGuardedRhs $ Hs.App (Hs.Var . Hs.UnQual . Hs.name $ "oneof") (Hs.List (map arbitraryFunName msgs))
   arbitraryFunName = Hs.Var . Hs.UnQual . Hs.name . arbitraryFunctionName
   name = Hs.UnQual . Hs.name $ "Arbitrary"
@@ -165,15 +168,15 @@ arbitraryApp (f:fs) = Hs.App (Hs.Var . Hs.UnQual . Hs.name $ "arbitrary") $ Hs.A
 generateArbitraryFunction :: Message -> [Hs.Decl]
 generateArbitraryFunction msg@(Message name _ fields) = decl where
   decl = [typeDef, body]
-  name' = Hs.name $ arbitraryFunctionName msg
-  typeDef = Hs.TypeSig Hs.noLoc [name'] (Hs.TyApp (Hs.TyVar . Hs.name $ "Arbitrary") (Hs.TyVar . Hs.name $ "ITCHMessage"))
-  body = Hs.FunBind $ [Hs.Match Hs.noLoc name' [] Nothing arbitraryRhs (Hs.BDecls [])]
+  name' = Hs.Ident $ arbitraryFunctionName msg
+  typeDef = Hs.TypeSig srcLoc [name'] (Hs.TyApp (Hs.TyVar . Hs.name $ "Arbitrary") (Hs.TyVar . Hs.name $ "ITCHMessage"))
+  body = Hs.FunBind $ [Hs.Match srcLoc name' [] Nothing arbitraryRhs (Hs.BDecls [])]
   arbitraryRhs = if null fields
                   then Hs.UnGuardedRhs $ Hs.App (Hs.Var . Hs.UnQual . Hs.name $ "pure") (Hs.Con . Hs.UnQual . messageConstr $ msg)
                   else Hs.UnGuardedRhs $ Hs.App (Hs.Con . Hs.UnQual . messageConstr $ msg) (Hs.App (Hs.Var fM) (arbitraryApp fields))
 
 generateMessageModule :: String -> [Message] -> Hs.Module
-generateMessageModule version msgs = Hs.Module Hs.noLoc modName pragmas warningText exports imports decls
+generateMessageModule version msgs = Hs.Module srcLoc modName pragmas warningText exports imports decls
   where modName = Hs.ModuleName $ "Data.ITCH.ITCH" <> version
         pragmas = []
         warningText = Nothing
@@ -192,8 +195,8 @@ generateMessageModule version msgs = Hs.Module Hs.noLoc modName pragmas warningT
           , "Data.Binary.Get"
           , "Control.Applicative"
           ]
-        decls = [generateArbitraryInstance msgs, generateMessageDecl msgs] ++ (concat $ map generateArbitraryFunction msgs)
-        importDecl name = Hs.ImportDecl Hs.noLoc (Hs.ModuleName name) False False Nothing Nothing Nothing
+        decls = (concat $ map generateArbitraryFunction msgs) ++ [generateArbitraryInstance msgs, generateMessageDecl msgs]
+        importDecl name = Hs.ImportDecl srcLoc (Hs.ModuleName name) False False Nothing Nothing Nothing
 
 main :: IO ()
 main = do
