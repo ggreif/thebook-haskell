@@ -99,25 +99,25 @@ fixNameCamel n = if T.length n > 0
 
 fieldTypeToName :: FieldType -> Hs.Name
 fieldTypeToName ft = case ft of
-  UInt8        -> Hs.sym "UInt8"
-  UInt16       -> Hs.sym "UInt8"
-  UInt32       -> Hs.sym "UInt32"
-  UInt64       -> Hs.sym "UInt64"
-  Byte         -> Hs.sym "Byte"
-  Price _ _    -> Hs.sym "Data.Decimal"
-  BitField     -> Hs.sym "BitField"
-  Alpha length -> Hs.sym "Data.ByteString.Char8.ByteString"
-  Date _       -> Hs.sym "Data.Time.Calendar.Day"
-  Time _       -> Hs.sym "Data.Time.Clock.DiffTime"
+  UInt8        -> Hs.name "UInt8"
+  UInt16       -> Hs.name "UInt8"
+  UInt32       -> Hs.name "UInt32"
+  UInt64       -> Hs.name "UInt64"
+  Byte         -> Hs.name "Byte"
+  Price _ _    -> Hs.name "Data.Decimal"
+  BitField     -> Hs.name "BitField"
+  Alpha length -> Hs.name "Data.ByteString.Char8.ByteString"
+  Date _       -> Hs.name "Data.Time.Calendar.Day"
+  Time _       -> Hs.name "Data.Time.Clock.DiffTime"
 
 fieldDecl :: Message -> Field -> ([Hs.Name], Hs.BangType)
 fieldDecl (Message msg _ _) (Field name t) =
-  let fieldName = Hs.sym . T.unpack $ "_" <> fixNameCamel msg <> fixName name
+  let fieldName = Hs.name . T.unpack $ "_" <> fixNameCamel msg <> fixName name
   in ([fieldName], Hs.UnpackedTy . Hs.TyCon . Hs.UnQual . fieldTypeToName $ t)
 
 messageConstr :: Message -> Hs.Name
 messageConstr m@(Message name _ _)
-  = Hs.Ident . T.unpack . fixName $ name
+  = Hs.name . T.unpack . fixName $ name
 
 recordDecl :: Message -> Hs.ConDecl
 recordDecl m@(Message name _ fields) = Hs.RecDecl ident args
@@ -145,7 +145,7 @@ generateArbitraryInstance :: [Message] -> Hs.Decl
 generateArbitraryInstance msgs = decl where
   decl = Hs.InstDecl Hs.noLoc [] name [type'] [decls]
   decls = Hs.InsDecl . Hs.FunBind $ [arbitraryDef]
-  arbitraryDef = Hs.Match Hs.noLoc (Hs.Ident "arbitrary") [] Nothing arbitraryRhs (Hs.BDecls [])
+  arbitraryDef = Hs.Match Hs.noLoc (Hs.name "arbitrary") [] Nothing arbitraryRhs (Hs.BDecls [])
   arbitraryRhs = Hs.UnGuardedRhs $ Hs.App (Hs.Var . Hs.UnQual . Hs.name $ "oneof") (Hs.List (map arbitraryFunName msgs))
   arbitraryFunName = Hs.Var . Hs.UnQual . Hs.name . arbitraryFunctionName
   name = Hs.UnQual . Hs.name $ "Arbitrary"
@@ -165,7 +165,7 @@ arbitraryApp (f:fs) = Hs.App (Hs.Var . Hs.UnQual . Hs.name $ "arbitrary") $ Hs.A
 generateArbitraryFunction :: Message -> [Hs.Decl]
 generateArbitraryFunction msg@(Message name _ fields) = decl where
   decl = [typeDef, body]
-  name' = Hs.Ident $ arbitraryFunctionName msg
+  name' = Hs.name $ arbitraryFunctionName msg
   typeDef = Hs.TypeSig Hs.noLoc [name'] (Hs.TyApp (Hs.TyVar . Hs.name $ "Arbitrary") (Hs.TyVar . Hs.name $ "ITCHMessage"))
   body = Hs.FunBind $ [Hs.Match Hs.noLoc name' [] Nothing arbitraryRhs (Hs.BDecls [])]
   arbitraryRhs = if null fields
@@ -192,7 +192,7 @@ generateMessageModule version msgs = Hs.Module Hs.noLoc modName pragmas warningT
           , "Data.Binary.Get"
           , "Control.Applicative"
           ]
-        decls = (concat $ map generateArbitraryFunction msgs) ++ [generateArbitraryInstance msgs, generateMessageDecl msgs]
+        decls = [generateArbitraryInstance msgs, generateMessageDecl msgs] ++ (concat $ map generateArbitraryFunction msgs)
         importDecl name = Hs.ImportDecl Hs.noLoc (Hs.ModuleName name) False False Nothing Nothing Nothing
 
 main :: IO ()
