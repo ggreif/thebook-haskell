@@ -7,7 +7,9 @@ environment: ghc-7.8-unstable
 cabal-file: thebook.cabal
 hidden-packages: ''
 version: 1
-extra-packages: ! 'Hackage: tasty-quickcheck 0.3.1'
+extra-packages: ! 'Hackage: tasty-quickcheck 0.3.1
+
+  Hackage: Decimal 0.3.1'
 ghc-args:
 - -v
 excluded-modules: []

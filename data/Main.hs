@@ -83,7 +83,7 @@ parseType attrs "Time"  = Time  <$> lookupRead "length" attrs
 parseType _ _           = Nothing
 
 itchMessageADT :: Hs.Name
-itchMessageADT = Hs.sym "ITCHMessage"
+itchMessageADT = Hs.Ident "ITCHMessage"
 
 -- | Names in the name tag are of the form "ITCH Add Order"
 -- This is not a valid haskell data constructor, so we need
@@ -160,7 +160,7 @@ fS = Hs.UnQual . Hs.name $ "<*>"
 arbitraryApp :: [Field] -> Hs.Exp
 arbitraryApp []     = error "Sorry"
 arbitraryApp [f]    = Hs.Var . Hs.UnQual . Hs.name $ "arbitrary"
-arbitraryApp (f:fs) = Hs.InfixApp (Hs.Var . Hs.UnQual . Hs.name $ "arbitrary") (Hs.QVarOp fS) (arbitraryApp fs)
+arbitraryApp (f:fs) = Hs.App (Hs.Var . Hs.UnQual . Hs.name $ "arbitrary") $ Hs.App (Hs.Var fS) (arbitraryApp fs)
 
 generateArbitraryFunction :: Message -> [Hs.Decl]
 generateArbitraryFunction msg@(Message name _ fields) = decl where
@@ -169,8 +169,8 @@ generateArbitraryFunction msg@(Message name _ fields) = decl where
   typeDef = Hs.TypeSig Hs.noLoc [name'] (Hs.TyApp (Hs.TyVar . Hs.name $ "Arbitrary") (Hs.TyVar . Hs.name $ "ITCHMessage"))
   body = Hs.FunBind $ [Hs.Match Hs.noLoc name' [] Nothing arbitraryRhs (Hs.BDecls [])]
   arbitraryRhs = if null fields
-                  then Hs.UnGuardedRhs $ Hs.App (Hs.Var . Hs.UnQual . Hs.name $ "pure") (Hs.Con . Hs.UnQual $ itchMessageADT)
-                  else Hs.UnGuardedRhs $ Hs.InfixApp (Hs.Con . Hs.UnQual $ itchMessageADT) (Hs.QVarOp fM) (arbitraryApp fields)
+                  then Hs.UnGuardedRhs $ Hs.App (Hs.Var . Hs.UnQual . Hs.name $ "pure") (Hs.Con . Hs.UnQual . messageConstr $ msg)
+                  else Hs.UnGuardedRhs $ Hs.App (Hs.Con . Hs.UnQual . messageConstr $ msg) (Hs.App (Hs.Var fM) (arbitraryApp fields))
 
 generateMessageModule :: String -> [Message] -> Hs.Module
 generateMessageModule version msgs = Hs.Module Hs.noLoc modName pragmas warningText exports imports decls
@@ -183,9 +183,9 @@ generateMessageModule version msgs = Hs.Module Hs.noLoc modName pragmas warningT
         imports = importDecl <$> [
             "Data.ITCH.Types"
           , "Data.Decimal"
-          , "Data.ByteString.Char8.ByteString"
-          , "Data.Time.Calendar.Day"
-          , "Data.Time.Clock.DiffTime"
+          , "Data.ByteString.Char8"
+          , "Data.Time.Calendar"
+          , "Data.Time.Clock"
           , "Test.QuickCheck.Arbitrary"
           , "Test.QuickCheck.Gen"
           , "Data.Binary.Put"
