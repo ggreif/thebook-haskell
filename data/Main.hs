@@ -6,12 +6,12 @@ import Data.Text (Text)
 import Data.String
 import Data.Word (Word8)
 import Control.Applicative ((<$>), (<*>), (<*), (<|>), pure)
-import Control.Monad ((=<<), forever)
+import Control.Monad (void, (=<<), forever)
 import Data.Char (toLower)
 import Data.Map (Map)
 import Data.Monoid ((<>))
 import qualified Data.Map as M
-import Data.Maybe (catMaybes)
+import Data.Maybe (catMaybes, mapMaybe)
 import qualified Text.XML as XML
 import Text.XML (Node, Element, elementAttributes)
 import Text.XML.Cursor (fromNode, node, attribute, fromDocument, child, element, ($/), (&//), (&/), (&|))
@@ -24,6 +24,8 @@ import System.Environment (getArgs)
 import System.FilePath (joinPath)
 import System.IO (hFlush, stdout)
 import Text.Read (readMaybe)
+
+-- * Datatypes
 
 -- | A single ITCH message.
 data Message = Message Text Word8 [Field] deriving (Show)
@@ -45,6 +47,8 @@ data FieldType
   | Time Int
   deriving (Show, Read)
 
+-- * XML schema parser
+
 onElement :: (XML.Element -> Maybe a) -> XML.Node -> Maybe a
 onElement f (XML.NodeElement e) = f e
 onElement _ _ = Nothing
@@ -57,7 +61,7 @@ parseMessage :: XML.Element -> Maybe Message
 parseMessage e@(XML.Element _ attrs fields)
   = Message <$> M.lookup "name" attrs
             <*> lookupRead "msgtype" attrs
-            <*> pure (catMaybes $ map navigate fields)
+            <*> pure (mapMaybe navigate fields)
     where navigate :: XML.Node -> Maybe Field
           navigate = onElement parseField
 
@@ -82,8 +86,16 @@ parseType attrs "Date"  = Date  <$> lookupRead "length" attrs
 parseType attrs "Time"  = Time  <$> lookupRead "length" attrs
 parseType _ _           = Nothing
 
+-- * AST generation
+
 srcLoc :: Hs.SrcLoc
 srcLoc = Hs.SrcLoc {Hs.srcFilename = "foo.hs", Hs.srcLine = 1, Hs.srcColumn = 1}
+
+fM :: Hs.QName
+fM = Hs.UnQual . Hs.name $ "(<$>)"
+
+fS :: Hs.QName
+fS = Hs.UnQual . Hs.name $ "(<*>)"
 
 itchMessageADT :: Hs.Name
 itchMessageADT = Hs.Ident "ITCHMessage"
@@ -142,8 +154,9 @@ generateMessageDecl msgs = decl where
   derived   = map ((\v -> (v, [])) . Hs.UnQual . Hs.name) ["Show","Eq"]
 
 arbitraryFunctionName :: Message -> String
-arbitraryFunctionName (Message msg _ _) = T.unpack $ " arbitrary" <> fixName msg
+arbitraryFunctionName (Message msg _ _) = T.unpack $ "arbitrary" <> fixName msg
 
+-- | Generates 'Test.QuickCheck.Arbitrary' instance for the messages.
 generateArbitraryInstance :: [Message] -> Hs.Decl
 generateArbitraryInstance msgs = decl where
   decl = Hs.InstDecl srcLoc [] name [type'] [decls]
@@ -154,15 +167,32 @@ generateArbitraryInstance msgs = decl where
   name = Hs.UnQual . Hs.name $ "Arbitrary"
   type' = Hs.TyCon . Hs.UnQual $ itchMessageADT
 
-fM :: Hs.QName
-fM = Hs.UnQual . Hs.name $ "(<$>)"
+getFunctionName :: Message -> String
+getFunctionName (Message msg _ _) = T.unpack $ "get" <> fixName msg
 
-fS :: Hs.QName
-fS = Hs.UnQual . Hs.name $ "(<*>)"
+ -- | Generates a 'Data.Binary' instance for the messages.
+generateBinaryInstance :: [Message] -> Hs.Decl
+generateBinaryInstance msgs = decl where
+  decl = Hs.InstDecl srcLoc [] name [type'] [decls]
+  decls = Hs.InsDecl . Hs.FunBind $ [getDef, putDef]
+  getDef = Hs.Match srcLoc (Hs.name "get") [] Nothing getRhs (Hs.BDecls [])
+  getRhs = Hs.UnGuardedRhs getDo
+  msgTypeVar = Hs.name $ "msgType"
+  getDo  = Hs.Do [Hs.Generator srcLoc (Hs.PVar msgTypeVar) (Hs.Var . Hs.UnQual . Hs.name $ "getMessageType"), getDoCase]
+  getDoCase = Hs.Qualifier $ Hs.Case (Hs.Var . Hs.UnQual $ msgTypeVar) (getDoCases ++ [getEmptyDoCase])
+  getDoCases = map (\msg@(Message n t _) -> Hs.Alt srcLoc (Hs.PLit . Hs.Int . fromIntegral $ t) (Hs.UnGuardedAlt (Hs.Var . Hs.UnQual . Hs.name . getFunctionName $ msg)) (Hs.BDecls [])) msgs
+  getEmptyDoCase = Hs.Alt srcLoc Hs.PWildCard (Hs.UnGuardedAlt (Hs.App (Hs.Var . Hs.UnQual . Hs.name $ "fail") (Hs.Lit . Hs.String $ "Unknown msg type"))) (Hs.BDecls [])
+  putDef = Hs.Match srcLoc (Hs.name "put") [] Nothing putRhs (Hs.BDecls [])
+  putRhs = Hs.UnGuardedRhs $ Hs.App (Hs.Var . Hs.UnQual . Hs.name $ "oneof") (Hs.List (map arbitraryFunName msgs))
+  arbitraryFunName = Hs.Var . Hs.UnQual . Hs.name . arbitraryFunctionName
+  name = Hs.UnQual . Hs.name $ "Binary"
+  type' = Hs.TyCon . Hs.UnQual $ itchMessageADT
+
+-- ** Arbitrary function for a message
 
 arbitraryApp :: Message -> [Field] -> Hs.Exp
 arbitraryApp _ []     = error "Sorry"
-arbitraryApp msg [(Field _ t)]  = Hs.App (Hs.App (Hs.Var fM) (Hs.Con . Hs.UnQual . messageConstr $ msg)) (Hs.Var . Hs.UnQual . Hs.name $ "arbitrary")
+arbitraryApp msg [Field _ t]  = Hs.App (Hs.App (Hs.Var fM) (Hs.Con . Hs.UnQual . messageConstr $ msg)) (Hs.Var . Hs.UnQual . Hs.name $ "arbitrary")
 arbitraryApp msg (f:fs) = Hs.App (Hs.App (Hs.Var fS) (arbitraryApp msg fs)) (Hs.Var . Hs.UnQual . Hs.name $ "arbitrary")
 
 generateArbitraryFunction :: Message -> [Hs.Decl]
@@ -170,10 +200,25 @@ generateArbitraryFunction msg@(Message name _ fields) = decl where
   decl = [typeDef, body]
   name' = Hs.Ident $ arbitraryFunctionName msg
   typeDef = Hs.TypeSig srcLoc [name'] (Hs.TyApp (Hs.TyVar . Hs.name $ "Gen") (Hs.TyVar . Hs.name $ "ITCHMessage"))
-  body = Hs.FunBind $ [Hs.Match srcLoc name' [] Nothing arbitraryRhs (Hs.BDecls [])]
-  arbitraryRhs = if null fields
-                  then Hs.UnGuardedRhs $ Hs.App (Hs.Var . Hs.UnQual . Hs.name $ "pure") (Hs.Con . Hs.UnQual . messageConstr $ msg)
-                  else Hs.UnGuardedRhs $ (arbitraryApp msg fields)
+  body = Hs.FunBind [Hs.Match srcLoc name' [] Nothing arbitraryRhs (Hs.BDecls [])]
+  arbitraryRhs = Hs.UnGuardedRhs $ if null fields
+                  then Hs.App (Hs.Var . Hs.UnQual . Hs.name $ "pure") (Hs.Con . Hs.UnQual . messageConstr $ msg)
+                  else arbitraryApp msg fields
+
+-- ** Factory function for a message
+
+factoryFunctionName :: Message -> String
+factoryFunctionName (Message msg _ _) = T.unpack $ fixNameCamel msg
+
+generateFactoryFunction :: Message -> [Hs.Decl]
+generateFactoryFunction msg@(Message name _ fields) = decl where
+  decl = [typeDef, body]
+  name' = Hs.Ident $ factoryFunctionName msg
+  typeDef = Hs.TypeSig srcLoc [name'] types
+  types = foldr1 Hs.TyFun $ fieldsT ++ [Hs.TyVar . Hs.name $ "ITCHMessage"]
+  fieldsT = map (Hs.TyVar . (\(Field _  t) -> fieldTypeToName t)) fields
+  body = Hs.FunBind [Hs.Match srcLoc name' [] Nothing arbitraryRhs (Hs.BDecls [])]
+  arbitraryRhs = Hs.UnGuardedRhs . Hs.Con . Hs.UnQual . messageConstr $ msg
 
 generateMessageModule :: String -> [Message] -> Hs.Module
 generateMessageModule version msgs = Hs.Module srcLoc modName pragmas warningText exports imports decls
@@ -185,28 +230,30 @@ generateMessageModule version msgs = Hs.Module srcLoc modName pragmas warningTex
           ]
         imports = importDecl <$> [
             "Data.ITCH.Types"
-          , "Data.Decimal"
-          , "Data.ByteString.Char8"
-          , "Data.Time.Calendar"
-          , "Data.Time.Clock"
           , "Test.QuickCheck.Arbitrary"
           , "Test.QuickCheck.Gen"
+          , "Data.Binary"
           , "Data.Binary.Put"
           , "Data.Binary.Get"
           , "Control.Applicative"
           ]
-        decls = (concat $ map generateArbitraryFunction msgs) ++ [generateArbitraryInstance msgs, generateMessageDecl msgs]
+        decls = [binaryInstance, arbitraryInstance, messageDecl] ++ factoryFunctions ++ arbitraryFunctions
+        factoryFunctions = concatMap generateFactoryFunction msgs
+        arbitraryFunctions = concatMap generateArbitraryFunction msgs
+        arbitraryInstance = generateArbitraryInstance msgs
+        binaryInstance = generateBinaryInstance msgs
+        messageDecl = generateMessageDecl msgs
         importDecl name = Hs.ImportDecl srcLoc (Hs.ModuleName name) False False Nothing Nothing Nothing
 
 main :: IO ()
-main = do
+main = void $ do
    args <- getArgs
    if length args /= 2
     then do
       putStrLn "Usage: Main <Path-to-xml> <Version>"
       return ()
     else do
-      let path    = args !! 0
+      let path    = head args
           version = args !! 1
       -- Get the cursor
       document <- XML.readFile XML.def (fromString path)
@@ -220,7 +267,4 @@ main = do
           ppr = Hs.prettyPrintStyleMode Hs.style Hs.defaultMode
 
       putStr (ppr types)
-      -- hFlush stdout
-      -- print messages
-      return ()
 

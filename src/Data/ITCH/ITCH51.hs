@@ -1,14 +1,138 @@
 module Data.ITCH.ITCH51 (ITCHMessage(..)) where
 import Data.ITCH.Types
-import Data.Decimal
-import Data.ByteString.Char8
-import Data.Time.Calendar
-import Data.Time.Clock
 import Test.QuickCheck.Arbitrary
 import Test.QuickCheck.Gen
+import Data.Binary
 import Data.Binary.Put
 import Data.Binary.Get
 import Control.Applicative
+
+addOrder ::
+         UInt32 ->
+           UInt64 ->
+             Byte ->
+               UInt32 ->
+                 UInt32 -> Byte -> Byte -> Price -> BitField -> ITCHMessage
+addOrder = AddOrder
+ 
+addAttributedOrder ::
+                   UInt32 ->
+                     UInt64 ->
+                       Byte ->
+                         UInt32 ->
+                           UInt32 -> Byte -> Byte -> Price -> Alpha -> BitField -> ITCHMessage
+addAttributedOrder = AddAttributedOrder
+ 
+orderDeleted :: UInt32 -> UInt64 -> BitField -> ITCHMessage
+orderDeleted = OrderDeleted
+ 
+orderModified ::
+              UInt32 -> UInt64 -> UInt32 -> Price -> BitField -> ITCHMessage
+orderModified = OrderModified
+ 
+orderBookClear ::
+               UInt32 -> UInt32 -> Byte -> Byte -> BitField -> ITCHMessage
+orderBookClear = OrderBookClear
+ 
+time :: UInt32 -> ITCHMessage
+time = Time
+ 
+loginRequest :: Alpha -> Alpha -> ITCHMessage
+loginRequest = LoginRequest
+ 
+replayRequest :: Byte -> UInt32 -> UInt8 -> ITCHMessage
+replayRequest = ReplayRequest
+ 
+snapshotRequest :: UInt32 -> Alpha -> UInt32 -> ITCHMessage
+snapshotRequest = SnapshotRequest
+ 
+logoutRequest :: ITCHMessage
+logoutRequest = LogoutRequest
+ 
+loginResponse :: Byte -> ITCHMessage
+loginResponse = LoginResponse
+ 
+replayResponse :: Byte -> UInt32 -> UInt8 -> Byte -> ITCHMessage
+replayResponse = ReplayResponse
+ 
+snapshotResponse :: UInt32 -> UInt32 -> Byte -> ITCHMessage
+snapshotResponse = SnapshotResponse
+ 
+snapshotComplete ::
+                 UInt32 -> Alpha -> UInt32 -> BitField -> ITCHMessage
+snapshotComplete = SnapshotComplete
+ 
+systemEvent :: UInt32 -> Byte -> ITCHMessage
+systemEvent = SystemEvent
+ 
+symbolDirectory ::
+                UInt32 ->
+                  UInt32 ->
+                    Byte ->
+                      Byte ->
+                        Alpha ->
+                          Alpha ->
+                            Alpha ->
+                              Alpha -> Alpha -> Alpha -> Byte -> Alpha -> Price -> ITCHMessage
+symbolDirectory = SymbolDirectory
+ 
+symbolStatus ::
+             UInt32 ->
+               UInt32 ->
+                 Byte ->
+                   Byte ->
+                     Byte -> BitField -> Alpha -> UInt8 -> Time -> UInt8 -> ITCHMessage
+symbolStatus = SymbolStatus
+ 
+orderExecuted ::
+              UInt32 -> UInt64 -> UInt32 -> UInt64 -> ITCHMessage
+orderExecuted = OrderExecuted
+ 
+orderExecutedWithPrice ::
+                       UInt32 ->
+                         UInt64 ->
+                           UInt32 -> UInt32 -> UInt64 -> Byte -> Price -> ITCHMessage
+orderExecutedWithPrice = OrderExecutedWithPrice
+ 
+trade ::
+      UInt32 ->
+        UInt32 ->
+          UInt32 -> Byte -> Byte -> Price -> UInt64 -> Byte -> ITCHMessage
+trade = Trade
+ 
+auctionTrade ::
+             UInt32 ->
+               UInt32 ->
+                 UInt32 -> Byte -> Byte -> Price -> UInt64 -> Byte -> ITCHMessage
+auctionTrade = AuctionTrade
+ 
+tradeBreak :: UInt32 -> UInt64 -> Byte -> ITCHMessage
+tradeBreak = TradeBreak
+ 
+auctionInfo ::
+            UInt32 ->
+              UInt32 ->
+                UInt32 ->
+                  Byte -> UInt32 -> Byte -> Byte -> Price -> Byte -> ITCHMessage
+auctionInfo = AuctionInfo
+ 
+offBookTrade ::
+             UInt32 ->
+               UInt32 ->
+                 UInt32 ->
+                   Byte ->
+                     Byte ->
+                       Price ->
+                         UInt64 ->
+                           Alpha ->
+                             Time -> Date -> Alpha -> Price -> Alpha -> BitField -> ITCHMessage
+offBookTrade = OffBookTrade
+ 
+statistics ::
+           UInt32 ->
+             UInt32 ->
+               Byte -> Byte -> Alpha -> Price -> Alpha -> BitField -> ITCHMessage
+statistics = Statistics
  
 arbitraryAddOrder :: Gen ITCHMessage
 arbitraryAddOrder

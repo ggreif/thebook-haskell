@@ -1,6 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiWayIf #-}
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE DataKinds #-}
 -----------------------------------------------------------------------------
@@ -28,6 +27,8 @@ module Data.ITCH.Types (
     -- | Types
   , Alpha, BitField, Date, Time, UInt8, UInt16, UInt32, UInt64, Byte, Price
 
+    -- | Utilities
+  , getMessageType
   ) where
 
 import Data.Bits (bit, testBit, (.|.))
@@ -122,6 +123,10 @@ instance Binary UInt64 where
 
 -- * Message header
 -- Defines the message type and length.
+
+-- | Simplifies getting the msg type in generated code.
+getMessageType :: Get Byte
+getMessageType = get
 
 -- | Message header
 class Binary a => MessageHeader a where
