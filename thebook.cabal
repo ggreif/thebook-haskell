@@ -44,6 +44,7 @@ library
                      , binary >= 0.6.3
                      , lens
                      , QuickCheck == 2.6.*
+                     , Decimal
   hs-source-dirs:      src
   ghc-options:         -Wall -fwarn-incomplete-patterns
 
