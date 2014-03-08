@@ -10,8 +10,8 @@ import Data.Binary.Put
 import Data.Binary.Get
 import Control.Applicative
  
- arbitraryAddOrder :: Gen ITCHMessage
- arbitraryAddOrder
+arbitraryAddOrder :: Gen ITCHMessage
+arbitraryAddOrder
   = (<*>)
       ((<*>)
          ((<*>)
@@ -26,8 +26,8 @@ import Control.Applicative
          arbitrary)
       arbitrary
  
- arbitraryAddAttributedOrder :: Gen ITCHMessage
- arbitraryAddAttributedOrder
+arbitraryAddAttributedOrder :: Gen ITCHMessage
+arbitraryAddAttributedOrder
   = (<*>)
       ((<*>)
          ((<*>)
@@ -45,20 +45,20 @@ import Control.Applicative
          arbitrary)
       arbitrary
  
- arbitraryOrderDeleted :: Gen ITCHMessage
- arbitraryOrderDeleted
+arbitraryOrderDeleted :: Gen ITCHMessage
+arbitraryOrderDeleted
   = (<*>) ((<*>) ((<$>) OrderDeleted arbitrary) arbitrary) arbitrary
  
- arbitraryOrderModified :: Gen ITCHMessage
- arbitraryOrderModified
+arbitraryOrderModified :: Gen ITCHMessage
+arbitraryOrderModified
   = (<*>)
       ((<*>)
          ((<*>) ((<*>) ((<$>) OrderModified arbitrary) arbitrary) arbitrary)
          arbitrary)
       arbitrary
  
- arbitraryOrderBookClear :: Gen ITCHMessage
- arbitraryOrderBookClear
+arbitraryOrderBookClear :: Gen ITCHMessage
+arbitraryOrderBookClear
   = (<*>)
       ((<*>)
          ((<*>) ((<*>) ((<$>) OrderBookClear arbitrary) arbitrary)
@@ -66,53 +66,53 @@ import Control.Applicative
          arbitrary)
       arbitrary
  
- arbitraryTime :: Gen ITCHMessage
- arbitraryTime = (<$>) Time arbitrary
+arbitraryTime :: Gen ITCHMessage
+arbitraryTime = (<$>) Time arbitrary
  
- arbitraryLoginRequest :: Gen ITCHMessage
- arbitraryLoginRequest
+arbitraryLoginRequest :: Gen ITCHMessage
+arbitraryLoginRequest
   = (<*>) ((<$>) LoginRequest arbitrary) arbitrary
  
- arbitraryReplayRequest :: Gen ITCHMessage
- arbitraryReplayRequest
+arbitraryReplayRequest :: Gen ITCHMessage
+arbitraryReplayRequest
   = (<*>) ((<*>) ((<$>) ReplayRequest arbitrary) arbitrary) arbitrary
  
- arbitrarySnapshotRequest :: Gen ITCHMessage
- arbitrarySnapshotRequest
+arbitrarySnapshotRequest :: Gen ITCHMessage
+arbitrarySnapshotRequest
   = (<*>) ((<*>) ((<$>) SnapshotRequest arbitrary) arbitrary)
       arbitrary
  
- arbitraryLogoutRequest :: Gen ITCHMessage
- arbitraryLogoutRequest = pure LogoutRequest
+arbitraryLogoutRequest :: Gen ITCHMessage
+arbitraryLogoutRequest = pure LogoutRequest
  
- arbitraryLoginResponse :: Gen ITCHMessage
- arbitraryLoginResponse = (<$>) LoginResponse arbitrary
+arbitraryLoginResponse :: Gen ITCHMessage
+arbitraryLoginResponse = (<$>) LoginResponse arbitrary
  
- arbitraryReplayResponse :: Gen ITCHMessage
- arbitraryReplayResponse
+arbitraryReplayResponse :: Gen ITCHMessage
+arbitraryReplayResponse
   = (<*>)
       ((<*>) ((<*>) ((<$>) ReplayResponse arbitrary) arbitrary)
          arbitrary)
       arbitrary
  
- arbitrarySnapshotResponse :: Gen ITCHMessage
- arbitrarySnapshotResponse
+arbitrarySnapshotResponse :: Gen ITCHMessage
+arbitrarySnapshotResponse
   = (<*>) ((<*>) ((<$>) SnapshotResponse arbitrary) arbitrary)
       arbitrary
  
- arbitrarySnapshotComplete :: Gen ITCHMessage
- arbitrarySnapshotComplete
+arbitrarySnapshotComplete :: Gen ITCHMessage
+arbitrarySnapshotComplete
   = (<*>)
       ((<*>) ((<*>) ((<$>) SnapshotComplete arbitrary) arbitrary)
          arbitrary)
       arbitrary
  
- arbitrarySystemEvent :: Gen ITCHMessage
- arbitrarySystemEvent
+arbitrarySystemEvent :: Gen ITCHMessage
+arbitrarySystemEvent
   = (<*>) ((<$>) SystemEvent arbitrary) arbitrary
  
- arbitrarySymbolDirectory :: Gen ITCHMessage
- arbitrarySymbolDirectory
+arbitrarySymbolDirectory :: Gen ITCHMessage
+arbitrarySymbolDirectory
   = (<*>)
       ((<*>)
          ((<*>)
@@ -136,8 +136,8 @@ import Control.Applicative
          arbitrary)
       arbitrary
  
- arbitrarySymbolStatus :: Gen ITCHMessage
- arbitrarySymbolStatus
+arbitrarySymbolStatus :: Gen ITCHMessage
+arbitrarySymbolStatus
   = (<*>)
       ((<*>)
          ((<*>)
@@ -154,14 +154,14 @@ import Control.Applicative
          arbitrary)
       arbitrary
  
- arbitraryOrderExecuted :: Gen ITCHMessage
- arbitraryOrderExecuted
+arbitraryOrderExecuted :: Gen ITCHMessage
+arbitraryOrderExecuted
   = (<*>)
       ((<*>) ((<*>) ((<$>) OrderExecuted arbitrary) arbitrary) arbitrary)
       arbitrary
  
- arbitraryOrderExecutedWithPrice :: Gen ITCHMessage
- arbitraryOrderExecutedWithPrice
+arbitraryOrderExecutedWithPrice :: Gen ITCHMessage
+arbitraryOrderExecutedWithPrice
   = (<*>)
       ((<*>)
          ((<*>)
@@ -173,8 +173,8 @@ import Control.Applicative
          arbitrary)
       arbitrary
  
- arbitraryTrade :: Gen ITCHMessage
- arbitraryTrade
+arbitraryTrade :: Gen ITCHMessage
+arbitraryTrade
   = (<*>)
       ((<*>)
          ((<*>)
@@ -186,8 +186,8 @@ import Control.Applicative
          arbitrary)
       arbitrary
  
- arbitraryAuctionTrade :: Gen ITCHMessage
- arbitraryAuctionTrade
+arbitraryAuctionTrade :: Gen ITCHMessage
+arbitraryAuctionTrade
   = (<*>)
       ((<*>)
          ((<*>)
@@ -200,12 +200,12 @@ import Control.Applicative
          arbitrary)
       arbitrary
  
- arbitraryTradeBreak :: Gen ITCHMessage
- arbitraryTradeBreak
+arbitraryTradeBreak :: Gen ITCHMessage
+arbitraryTradeBreak
   = (<*>) ((<*>) ((<$>) TradeBreak arbitrary) arbitrary) arbitrary
  
- arbitraryAuctionInfo :: Gen ITCHMessage
- arbitraryAuctionInfo
+arbitraryAuctionInfo :: Gen ITCHMessage
+arbitraryAuctionInfo
   = (<*>)
       ((<*>)
          ((<*>)
@@ -220,8 +220,8 @@ import Control.Applicative
          arbitrary)
       arbitrary
  
- arbitraryOffBookTrade :: Gen ITCHMessage
- arbitraryOffBookTrade
+arbitraryOffBookTrade :: Gen ITCHMessage
+arbitraryOffBookTrade
   = (<*>)
       ((<*>)
          ((<*>)
@@ -247,8 +247,8 @@ import Control.Applicative
          arbitrary)
       arbitrary
  
- arbitraryStatistics :: Gen ITCHMessage
- arbitraryStatistics
+arbitraryStatistics :: Gen ITCHMessage
+arbitraryStatistics
   = (<*>)
       ((<*>)
          ((<*>)
