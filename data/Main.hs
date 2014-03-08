@@ -16,7 +16,10 @@ import qualified Text.XML as XML
 import Text.XML (Node, Element, elementAttributes)
 import Text.XML.Cursor (fromNode, node, attribute, fromDocument, child, element, ($/), (&//), (&/), (&|))
 import qualified Data.ByteString as B
-import Language.Haskell.Exts hiding (parseType)
+import qualified Language.Haskell.Exts as Hs
+import qualified Language.Haskell.Exts.Syntax as Hs
+import qualified Language.Haskell.Exts.Build as Hs
+import qualified Language.Haskell.Exts.SrcLoc as Hs
 import System.Environment (getArgs)
 import System.FilePath (joinPath)
 import System.IO (hFlush, stdout)
@@ -79,11 +82,8 @@ parseType attrs "Date"  = Date  <$> lookupRead "length" attrs
 parseType attrs "Time"  = Time  <$> lookupRead "length" attrs
 parseType _ _           = Nothing
 
-srcLoc :: SrcLoc
-srcLoc = SrcLoc {srcFilename = "foo.hs", srcLine = 1, srcColumn = 1}
-
-itchMessageADT :: Name
-itchMessageADT = Ident "ITCHMessage"
+itchMessageADT :: Hs.Name
+itchMessageADT = Hs.sym "ITCHMessage"
 
 -- | Names in the name tag are of the form "ITCH Add Order"
 -- This is not a valid haskell data constructor, so we need
@@ -97,80 +97,103 @@ fixNameCamel n = if T.length n > 0
                        in  T.cons (toLower . T.head $ fixedName) (T.drop 1 fixedName)
                   else n
 
-fieldTypeToName :: FieldType -> Name
+fieldTypeToName :: FieldType -> Hs.Name
 fieldTypeToName ft = case ft of
-  UInt8        -> Ident "UInt8"
-  UInt16       -> Ident "UInt8"
-  UInt32       -> Ident "UInt32"
-  UInt64       -> Ident "UInt64"
-  Byte         -> Ident "Byte"
-  Price _ _    -> Ident "Data.Decimal"
-  BitField     -> Ident "BitField"
-  Alpha length -> Ident "Data.ByteString.Char8.ByteString"
-  Date _       -> Ident "Data.Time.Calendar.Day"
-  Time _       -> Ident "Data.Time.Clock.DiffTime"
+  UInt8        -> Hs.sym "UInt8"
+  UInt16       -> Hs.sym "UInt8"
+  UInt32       -> Hs.sym "UInt32"
+  UInt64       -> Hs.sym "UInt64"
+  Byte         -> Hs.sym "Byte"
+  Price _ _    -> Hs.sym "Data.Decimal"
+  BitField     -> Hs.sym "BitField"
+  Alpha length -> Hs.sym "Data.ByteString.Char8.ByteString"
+  Date _       -> Hs.sym "Data.Time.Calendar.Day"
+  Time _       -> Hs.sym "Data.Time.Clock.DiffTime"
 
-fieldDecl :: Message -> Field -> ([Name], BangType)
+fieldDecl :: Message -> Field -> ([Hs.Name], Hs.BangType)
 fieldDecl (Message msg _ _) (Field name t) =
-  let fieldName = Ident . T.unpack $ "_" <> fixNameCamel msg <> fixName name
-  in ([fieldName], UnpackedTy . TyCon . UnQual . fieldTypeToName $ t)
+  let fieldName = Hs.sym . T.unpack $ "_" <> fixNameCamel msg <> fixName name
+  in ([fieldName], Hs.UnpackedTy . Hs.TyCon . Hs.UnQual . fieldTypeToName $ t)
 
-recordDecl :: Message -> ConDecl
-recordDecl m@(Message name _ fields) = RecDecl ident args
-  where ident        = Ident . T.unpack . fixName $ name
+messageConstr :: Message -> Hs.Name
+messageConstr m@(Message name _ _)
+  = Hs.Ident . T.unpack . fixName $ name
+
+recordDecl :: Message -> Hs.ConDecl
+recordDecl m@(Message name _ fields) = Hs.RecDecl ident args
+  where ident        = messageConstr m
         args         = map (fieldDecl m) fields
 
-generateMessageConDecl :: Message -> QualConDecl
-generateMessageConDecl msg = QualConDecl srcLoc tyVarBind context ctor
+generateMessageConDecl :: Message -> Hs.QualConDecl
+generateMessageConDecl msg = Hs.QualConDecl Hs.noLoc tyVarBind context ctor
   where tyVarBind = []
         context   = []
         ctor      = recordDecl msg
 
-generateMessageDecl :: [Message] -> Decl
+generateMessageDecl :: [Message] -> Hs.Decl
 generateMessageDecl msgs = decl where
-  decl      = DataDecl srcLoc DataType context itchMessageADT tyVarBind decls derived
+  decl      = Hs.DataDecl Hs.noLoc Hs.DataType context itchMessageADT tyVarBind decls derived
   decls     = map generateMessageConDecl msgs
   context   = []
   tyVarBind = []
-  derived   = map ((\v -> (v, [])) . UnQual . Ident) ["Generic","Show","Eq"]
+  derived   = map ((\v -> (v, [])) . Hs.UnQual . Hs.name) ["Generic","Show","Eq"]
 
 arbitraryFunctionName :: Message -> String
 arbitraryFunctionName (Message msg _ _) = T.unpack $ " arbitrary" <> fixName msg
 
-generateArbitraryInstance :: [Message] -> Decl
+generateArbitraryInstance :: [Message] -> Hs.Decl
 generateArbitraryInstance msgs = decl where
-  decl = InstDecl srcLoc [] name [type'] [decls]
-  decls = InsDecl . FunBind $ [arbitraryDef]
-  arbitraryDef = Match srcLoc (Ident "arbitrary") [] Nothing arbitraryRhs (BDecls [])
-  arbitraryRhs = UnGuardedRhs $ App (Var . UnQual . Ident $ "oneof") (List (map arbitraryFunName msgs))
-  arbitraryFunName = Var . UnQual . Ident . arbitraryFunctionName
-  name = UnQual . Ident $ "Arbitrary"
-  type' = TyCon . UnQual $ itchMessageADT
+  decl = Hs.InstDecl Hs.noLoc [] name [type'] [decls]
+  decls = Hs.InsDecl . Hs.FunBind $ [arbitraryDef]
+  arbitraryDef = Hs.Match Hs.noLoc (Hs.Ident "arbitrary") [] Nothing arbitraryRhs (Hs.BDecls [])
+  arbitraryRhs = Hs.UnGuardedRhs $ Hs.App (Hs.Var . Hs.UnQual . Hs.name $ "oneof") (Hs.List (map arbitraryFunName msgs))
+  arbitraryFunName = Hs.Var . Hs.UnQual . Hs.name . arbitraryFunctionName
+  name = Hs.UnQual . Hs.name $ "Arbitrary"
+  type' = Hs.TyCon . Hs.UnQual $ itchMessageADT
 
-generateArbitraryFunction :: Message -> [Decl]
+fM :: Hs.QName
+fM = Hs.UnQual . Hs.name $ "<$>"
+
+fS :: Hs.QName
+fS = Hs.UnQual . Hs.name $ "<*>"
+
+arbitraryApp :: [Field] -> Hs.Exp
+arbitraryApp []     = error "Sorry"
+arbitraryApp [f]    = Hs.Var . Hs.UnQual . Hs.name $ "arbitrary"
+arbitraryApp (f:fs) = Hs.InfixApp (Hs.Var . Hs.UnQual . Hs.name $ "arbitrary") (Hs.QVarOp fS) (arbitraryApp fs)
+
+generateArbitraryFunction :: Message -> [Hs.Decl]
 generateArbitraryFunction msg@(Message name _ fields) = decl where
-  decl = [typeDef]
-  typeDef = TypeSig srcLoc [Ident $ arbitraryFunctionName msg] (TyVar . Ident $ "Arbitrary")
+  decl = [typeDef, body]
+  name' = Hs.Ident $ arbitraryFunctionName msg
+  typeDef = Hs.TypeSig Hs.noLoc [name'] (Hs.TyApp (Hs.TyVar . Hs.name $ "Arbitrary") (Hs.TyVar . Hs.name $ "ITCHMessage"))
+  body = Hs.FunBind $ [Hs.Match Hs.noLoc name' [] Nothing arbitraryRhs (Hs.BDecls [])]
+  arbitraryRhs = if null fields
+                  then Hs.UnGuardedRhs $ Hs.App (Hs.Var . Hs.UnQual . Hs.name $ "pure") (Hs.Con . Hs.UnQual $ itchMessageADT)
+                  else Hs.UnGuardedRhs $ Hs.InfixApp (Hs.Con . Hs.UnQual $ itchMessageADT) (Hs.QVarOp fM) (arbitraryApp fields)
 
-generateMessageModule :: String -> [Message] -> Module
-generateMessageModule version msgs = Module srcLoc modName pragmas warningText exports imports decls
-  where modName = ModuleName $ "Data.ITCH.ITCH" <> version
+generateMessageModule :: String -> [Message] -> Hs.Module
+generateMessageModule version msgs = Hs.Module Hs.noLoc modName pragmas warningText exports imports decls
+  where modName = Hs.ModuleName $ "Data.ITCH.ITCH" <> version
         pragmas = []
         warningText = Nothing
         exports = Just [
-            EThingAll . UnQual $ itchMessageADT
+            Hs.EThingAll . Hs.UnQual $ itchMessageADT
           ]
-        imports = [
-            importDecl "Data.ITCH.Types"
-          , importDecl "Data.Decimal"
-          , importDecl "Data.ByteString.Char8.ByteString"
-          , importDecl "Data.Time.Calendar.Day"
-          , importDecl "Data.Time.Clock.DiffTime"
-          , importDecl "Test.QuickCheck.Arbitrary"
-          , importDecl "Test.QuickCheck.Gen"
+        imports = importDecl <$> [
+            "Data.ITCH.Types"
+          , "Data.Decimal"
+          , "Data.ByteString.Char8.ByteString"
+          , "Data.Time.Calendar.Day"
+          , "Data.Time.Clock.DiffTime"
+          , "Test.QuickCheck.Arbitrary"
+          , "Test.QuickCheck.Gen"
+          , "Data.Binary.Put"
+          , "Data.Binary.Get"
+          , "Control.Applicative"
           ]
         decls = (concat $ map generateArbitraryFunction msgs) ++ [generateArbitraryInstance msgs, generateMessageDecl msgs]
-        importDecl name = ImportDecl srcLoc (ModuleName name) False False Nothing Nothing Nothing
+        importDecl name = Hs.ImportDecl Hs.noLoc (Hs.ModuleName name) False False Nothing Nothing Nothing
 
 main :: IO ()
 main = do
@@ -191,7 +214,7 @@ main = do
                                &/ element "msg" &| (onElement parseMessage) . node
 
           types = generateMessageModule version messages
-          ppr = prettyPrintStyleMode style defaultMode
+          ppr = Hs.prettyPrintStyleMode Hs.style Hs.defaultMode
 
       putStr (ppr types)
       putStrLn "Hello"
