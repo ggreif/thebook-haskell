@@ -139,7 +139,7 @@ generateMessageDecl msgs = decl where
   decls     = map generateMessageConDecl msgs
   context   = []
   tyVarBind = []
-  derived   = map ((\v -> (v, [])) . Hs.UnQual . Hs.name) ["Generic","Show","Eq"]
+  derived   = map ((\v -> (v, [])) . Hs.UnQual . Hs.name) ["Show","Eq"]
 
 arbitraryFunctionName :: Message -> String
 arbitraryFunctionName (Message msg _ _) = T.unpack $ " arbitrary" <> fixName msg
@@ -220,7 +220,6 @@ main = do
           ppr = Hs.prettyPrintStyleMode Hs.style Hs.defaultMode
 
       putStr (ppr types)
-      putStrLn "Hello"
       -- hFlush stdout
       -- print messages
       return ()
