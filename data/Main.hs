@@ -107,7 +107,7 @@ fieldTypeToName ft = case ft of
   UInt32       -> Hs.name "UInt32"
   UInt64       -> Hs.name "UInt64"
   Byte         -> Hs.name "Byte"
-  Price _ _    -> Hs.name "Decimal"
+  Price _ _    -> Hs.name "Price"
   BitField     -> Hs.name "BitField"
   Alpha length -> Hs.name "Alpha"
   Date _       -> Hs.name "Date"
