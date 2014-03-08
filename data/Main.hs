@@ -134,15 +134,23 @@ generateMessageDecl msgs = decl where
   tyVarBind = []
   derived   = map ((\v -> (v, [])) . UnQual . Ident) ["Generic","Show","Eq"]
 
+arbitraryFunctionName :: Message -> String
+arbitraryFunctionName (Message msg _ _) = T.unpack $ " arbitrary" <> fixName msg
+
 generateArbitraryInstance :: [Message] -> Decl
 generateArbitraryInstance msgs = decl where
   decl = InstDecl srcLoc [] name [type'] [decls]
   decls = InsDecl . FunBind $ [arbitraryDef]
   arbitraryDef = Match srcLoc (Ident "arbitrary") [] Nothing arbitraryRhs (BDecls [])
   arbitraryRhs = UnGuardedRhs $ App (Var . UnQual . Ident $ "oneof") (List (map arbitraryFunName msgs))
-  arbitraryFunName (Message msg _ _) = Var . UnQual . Ident $ T.unpack $ " arbitrary" <> fixName msg
+  arbitraryFunName = Var . UnQual . Ident . arbitraryFunctionName
   name = UnQual . Ident $ "Arbitrary"
   type' = TyCon . UnQual $ itchMessageADT
+
+generateArbitraryFunction :: Message -> [Decl]
+generateArbitraryFunction msg@(Message name _ fields) = decl where
+  decl = [typeDef]
+  typeDef = TypeSig srcLoc [Ident $ arbitraryFunctionName msg] (TyVar . Ident $ "Arbitrary")
 
 generateMessageModule :: String -> [Message] -> Module
 generateMessageModule version msgs = Module srcLoc modName pragmas warningText exports imports decls
@@ -161,7 +169,7 @@ generateMessageModule version msgs = Module srcLoc modName pragmas warningText e
           , importDecl "Test.QuickCheck.Arbitrary"
           , importDecl "Test.QuickCheck.Gen"
           ]
-        decls = [generateArbitraryInstance msgs, generateMessageDecl msgs]
+        decls = (concat $ map generateArbitraryFunction msgs) ++ [generateArbitraryInstance msgs, generateMessageDecl msgs]
         importDecl name = ImportDecl srcLoc (ModuleName name) False False Nothing Nothing Nothing
 
 main :: IO ()
