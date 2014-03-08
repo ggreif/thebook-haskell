@@ -107,11 +107,11 @@ fieldTypeToName ft = case ft of
   UInt32       -> Hs.name "UInt32"
   UInt64       -> Hs.name "UInt64"
   Byte         -> Hs.name "Byte"
-  Price _ _    -> Hs.name "Data.Decimal"
+  Price _ _    -> Hs.name "Decimal"
   BitField     -> Hs.name "BitField"
-  Alpha length -> Hs.name "Data.ByteString.Char8.ByteString"
-  Date _       -> Hs.name "Data.Time.Calendar.Day"
-  Time _       -> Hs.name "Data.Time.Clock.DiffTime"
+  Alpha length -> Hs.name "Alpha"
+  Date _       -> Hs.name "Date"
+  Time _       -> Hs.name "Time"
 
 fieldDecl :: Message -> Field -> ([Hs.Name], Hs.BangType)
 fieldDecl (Message msg _ _) (Field name t) =
@@ -155,25 +155,25 @@ generateArbitraryInstance msgs = decl where
   type' = Hs.TyCon . Hs.UnQual $ itchMessageADT
 
 fM :: Hs.QName
-fM = Hs.UnQual . Hs.name $ "<$>"
+fM = Hs.UnQual . Hs.name $ "(<$>)"
 
 fS :: Hs.QName
-fS = Hs.UnQual . Hs.name $ "<*>"
+fS = Hs.UnQual . Hs.name $ "(<*>)"
 
-arbitraryApp :: [Field] -> Hs.Exp
-arbitraryApp []     = error "Sorry"
-arbitraryApp [f]    = Hs.Var . Hs.UnQual . Hs.name $ "arbitrary"
-arbitraryApp (f:fs) = Hs.App (Hs.Var . Hs.UnQual . Hs.name $ "arbitrary") $ Hs.App (Hs.Var fS) (arbitraryApp fs)
+arbitraryApp :: Message -> [Field] -> Hs.Exp
+arbitraryApp _ []     = error "Sorry"
+arbitraryApp msg [(Field _ t)]  = Hs.App (Hs.App (Hs.Var fM) (Hs.Con . Hs.UnQual . messageConstr $ msg)) (Hs.Var . Hs.UnQual . Hs.name $ "arbitrary")
+arbitraryApp msg (f:fs) = Hs.App (Hs.App (Hs.Var fS) (arbitraryApp msg fs)) (Hs.Var . Hs.UnQual . Hs.name $ "arbitrary")
 
 generateArbitraryFunction :: Message -> [Hs.Decl]
 generateArbitraryFunction msg@(Message name _ fields) = decl where
   decl = [typeDef, body]
   name' = Hs.Ident $ arbitraryFunctionName msg
-  typeDef = Hs.TypeSig srcLoc [name'] (Hs.TyApp (Hs.TyVar . Hs.name $ "Arbitrary") (Hs.TyVar . Hs.name $ "ITCHMessage"))
+  typeDef = Hs.TypeSig srcLoc [name'] (Hs.TyApp (Hs.TyVar . Hs.name $ "Gen") (Hs.TyVar . Hs.name $ "ITCHMessage"))
   body = Hs.FunBind $ [Hs.Match srcLoc name' [] Nothing arbitraryRhs (Hs.BDecls [])]
   arbitraryRhs = if null fields
                   then Hs.UnGuardedRhs $ Hs.App (Hs.Var . Hs.UnQual . Hs.name $ "pure") (Hs.Con . Hs.UnQual . messageConstr $ msg)
-                  else Hs.UnGuardedRhs $ Hs.App (Hs.Con . Hs.UnQual . messageConstr $ msg) (Hs.App (Hs.Var fM) (arbitraryApp fields))
+                  else Hs.UnGuardedRhs $ (arbitraryApp msg fields)
 
 generateMessageModule :: String -> [Message] -> Hs.Module
 generateMessageModule version msgs = Hs.Module srcLoc modName pragmas warningText exports imports decls

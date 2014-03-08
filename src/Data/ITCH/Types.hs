@@ -47,7 +47,9 @@ import Control.Monad (fail)
 import qualified Data.TheBook.MarketData as Types
 import Foreign.Storable (Storable, sizeOf)
 import Test.QuickCheck.Arbitrary (Arbitrary, arbitrary)
-import Test.QuickCheck.Gen (elements)
+import Test.QuickCheck.Gen (Gen, elements)
+import Data.Time.Clock (DiffTime, secondsToDiffTime)
+import Data.Time.Calendar (Day, fromGregorian)
 
 -- Look at: http://hackage.haskell.org/package/binary-0.5.0.2/docs/Data-Binary-Get.html
 -- http://www.haskell.org/haskellwiki/Dealing_with_binary_data
@@ -67,7 +69,16 @@ type BitField = Word8
 type Byte = Word8
 
 -- | Date      | 8        | Date specified in the YYYYMMDD format using ASCII characters.
+newtype Date = Date Day
+  deriving (Eq, Show)
+instance Arbitrary Date where
+  arbitrary = Date <$> (fromGregorian <$> arbitrary <*> arbitrary <*> arbitrary)
+
 -- | Time      | 8        | Time specified in the HH:MM:SS format using ASCII characters.
+newtype Time = Time DiffTime
+  deriving (Eq, Show)
+instance Arbitrary Time where
+  arbitrary = Time . secondsToDiffTime <$> arbitrary
 
 -- | Price     | 8        | Signed Little-Endian encoded eight byte integer field with eight implied decimal places.
 type Price = UInt64
@@ -177,6 +188,12 @@ instance Binary Printable where
   put (Printable printable) = put $ if | printable == Types.Printable_Yes     -> _Printable_Yes
                                        | printable == Types.Printable_No      -> _Printable_No
                                        | otherwise                            -> error "This is impossible"
+
+-- | Missing arbitrary instance for DiffTime.
+arbitraryDiffTime :: Gen DiffTime
+arbitraryDiffTime = secondsToDiffTime <$> arbitrary
+
+
 -- | Buy order
 _B :: Byte
 _B = 0x42
