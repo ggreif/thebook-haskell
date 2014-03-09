@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Data.TheBook.Untitled
+-- Module      :  Data.TheBook.Test
 -- Copyright   :  (c) 2014, Jakub Kozlowski
 -- License     :  MIT
 --
@@ -13,17 +13,14 @@ module Main where
 import qualified Data.TheBook.BookTest as BookTest
 import qualified Data.ITCH.TypesTest as TypesTest
 import qualified Data.ITCH.ITCH51Test as ITCH51Test
-import Test.Tasty
+import Test.Tasty as Tasty
 import Test.Tasty.QuickCheck as QC
 
-import Data.List
-import Data.Ord
-
 main :: IO ()
-main = defaultMain tests
+main = Tasty.defaultMain tests
 
-tests :: TestTree
-tests = testGroup "Tests" [
+tests :: Tasty.TestTree
+tests = Tasty.testGroup "Tests" [
     BookTest.tests
   , TypesTest.tests
   , ITCH51Test.tests

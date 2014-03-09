@@ -97,5 +97,6 @@ test-suite thebook-tests
   hs-source-dirs:     tests
   other-modules:      Data.TheBook.BookTest
                     , Data.ITCH.TypesTest
+                    , Data.ITCH.ITCH51Test
 
 
