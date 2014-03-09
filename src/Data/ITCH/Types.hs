@@ -28,7 +28,7 @@ module Data.ITCH.Types (
   , Alpha, BitField, Date, Time, UInt8, UInt16, UInt32, UInt64, Byte, Price
 
     -- | Utilities
-  , getMessageType
+  , getMessageType, putMessageType
   ) where
 
 import Data.Bits (bit, testBit, (.|.))
@@ -37,7 +37,7 @@ import Data.Decimal (Decimal, realFracToDecimal)
 import qualified Data.ByteString.Char8 as B8
 import Data.Binary (Binary, get, put)
 import Data.Binary.Get (Get, getWord16le, getWord32le, getWord64le)
-import Data.Binary.Put (putWord16le, putWord32le, putWord64le)
+import Data.Binary.Put (Put, putWord16le, putWord32le, putWord64le)
 import Control.Applicative ((<$>), (<*>), (*>), pure)
 import Control.Monad (fail)
 import qualified Data.TheBook.MarketData as Types
@@ -60,6 +60,9 @@ newtype Alpha = Alpha B8.ByteString
   deriving (Eq, Show)
 instance Arbitrary Alpha where
   arbitrary = Alpha . B8.pack <$> arbitrary
+instance Binary Alpha where
+  get = undefined
+  put (Alpha a) = undefined
 
 -- | Bit Field | 1        | A single byte used to hold up to eight 1-bit flags.
 --             |          | Each bit will represent a Boolean flag.
@@ -74,18 +77,27 @@ newtype Date = Date Day
   deriving (Eq, Show)
 instance Arbitrary Date where
   arbitrary = Date <$> (fromGregorian <$> arbitrary <*> arbitrary <*> arbitrary)
+instance Binary Date where
+  get = undefined
+  put (Date d) = undefined
 
 -- | Time      | 8        | Time specified in the HH:MM:SS format using ASCII characters.
 newtype Time = Time DiffTime
   deriving (Eq, Show)
 instance Arbitrary Time where
   arbitrary = Time . secondsToDiffTime <$> arbitrary
+instance Binary Time where
+  get = undefined
+  put (Time t) = undefined
 
 -- | Price     | 8        | Signed Little-Endian encoded eight byte integer field with eight implied decimal places.
 newtype Price = Price Decimal
   deriving (Eq, Show)
 instance Arbitrary Price where
   arbitrary = Price <$> (realFracToDecimal <$> arbitrary <*> (arbitrary :: Gen Double))
+instance Binary Price where
+  get = undefined
+  put (Price p) = undefined
 
 -- | UInt8     | 1        | 8 bit unsigned integer.
 type UInt8 = Word8
@@ -127,6 +139,9 @@ instance Binary UInt64 where
 -- | Simplifies getting the msg type in generated code.
 getMessageType :: Get Byte
 getMessageType = get
+
+putMessageType :: Byte -> Put
+putMessageType = put
 
 -- | Message header
 class Binary a => MessageHeader a where

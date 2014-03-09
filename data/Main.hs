@@ -97,6 +97,9 @@ fM = Hs.UnQual . Hs.name $ "(<$>)"
 fS :: Hs.QName
 fS = Hs.UnQual . Hs.name $ "(<*>)"
 
+fSeq :: Hs.QName
+fSeq = Hs.UnQual . Hs.name $ "(*>)"
+
 itchMessageADT :: Hs.Name
 itchMessageADT = Hs.Ident "ITCHMessage"
 
@@ -125,10 +128,12 @@ fieldTypeToName ft = case ft of
   Date _       -> Hs.name "Date"
   Time _       -> Hs.name "Time"
 
+fieldName :: Message -> Field -> String
+fieldName (Message msg _ _) (Field name _) = T.unpack $ "_" <> fixNameCamel msg <> fixName name
+
 fieldDecl :: Message -> Field -> ([Hs.Name], Hs.BangType)
-fieldDecl (Message msg _ _) (Field name t) =
-  let fieldName = Hs.name . T.unpack $ "_" <> fixNameCamel msg <> fixName name
-  in ([fieldName], Hs.UnpackedTy . Hs.TyCon . Hs.UnQual . fieldTypeToName $ t)
+fieldDecl m@(Message msg _ _) f@(Field name t) 
+  = ([Hs.name $ fieldName m f], Hs.UnpackedTy . Hs.TyCon . Hs.UnQual . fieldTypeToName $ t)
 
 messageConstr :: Message -> Hs.Name
 messageConstr m@(Message name _ _)
@@ -153,28 +158,45 @@ generateMessageDecl msgs = decl where
   tyVarBind = []
   derived   = map ((\v -> (v, [])) . Hs.UnQual . Hs.name) ["Show","Eq"]
 
-arbitraryFunctionName :: Message -> String
-arbitraryFunctionName (Message msg _ _) = T.unpack $ "arbitrary" <> fixName msg
-
--- | Generates 'Test.QuickCheck.Arbitrary' instance for the messages.
-generateArbitraryInstance :: [Message] -> Hs.Decl
-generateArbitraryInstance msgs = decl where
-  decl = Hs.InstDecl srcLoc [] name [type'] [decls]
-  decls = Hs.InsDecl . Hs.FunBind $ [arbitraryDef]
-  arbitraryDef = Hs.Match srcLoc (Hs.name "arbitrary") [] Nothing arbitraryRhs (Hs.BDecls [])
-  arbitraryRhs = Hs.UnGuardedRhs $ Hs.App (Hs.Var . Hs.UnQual . Hs.name $ "oneof") (Hs.List (map arbitraryFunName msgs))
-  arbitraryFunName = Hs.Var . Hs.UnQual . Hs.name . arbitraryFunctionName
-  name = Hs.UnQual . Hs.name $ "Arbitrary"
-  type' = Hs.TyCon . Hs.UnQual $ itchMessageADT
+-- ** Binary instance and functions generation for a message.
 
 getFunctionName :: Message -> String
 getFunctionName (Message msg _ _) = T.unpack $ "get" <> fixName msg
+
+putFunctionName :: Message -> String
+putFunctionName (Message msg _ _) = T.unpack $ "put" <> fixName msg
+
+getApp :: Message -> [Field] -> Hs.Exp
+getApp _ []     = error "Sorry"
+getApp msg [Field _ t]  = Hs.App (Hs.App (Hs.Var fM) (Hs.Con . Hs.UnQual . messageConstr $ msg)) (Hs.Var . Hs.UnQual . Hs.name $ "get")
+getApp msg (f:fs) = Hs.App (Hs.App (Hs.Var fS) (getApp msg fs)) (Hs.Var . Hs.UnQual . Hs.name $ "get")
+
+generateGetFunction :: Message -> [Hs.Decl]
+generateGetFunction msg@(Message name _ fields) = decl where
+  decl = [typeDef, body]
+  name' = Hs.Ident $ getFunctionName msg
+  typeDef = Hs.TypeSig srcLoc [name'] (Hs.TyApp (Hs.TyVar . Hs.name $ "Get") (Hs.TyVar . Hs.name $ "ITCHMessage"))
+  body = Hs.FunBind [Hs.Match srcLoc name' [] Nothing arbitraryRhs (Hs.BDecls [])]
+  arbitraryRhs = Hs.UnGuardedRhs $ if null fields
+                  then Hs.App (Hs.Var . Hs.UnQual . Hs.name $ "pure") (Hs.Con . Hs.UnQual . messageConstr $ msg)
+                  else getApp msg fields
+
+putApp :: Message -> [Field] -> Hs.Exp
+putApp _ []     = error "Sorry"
+putApp msg [f@(Field n t)]  = Hs.App (Hs.Var . Hs.UnQual . Hs.name $ "put") (Hs.App (Hs.Var . Hs.UnQual . Hs.name $ fieldName msg f) (Hs.Var . Hs.UnQual . Hs.name $ "msg"))
+putApp msg (f:fs) = Hs.App (Hs.App (Hs.Var fSeq) (putApp msg fs)) (Hs.App (Hs.Var . Hs.UnQual . Hs.name $ "put") (Hs.App (Hs.Var . Hs.UnQual . Hs.name $ fieldName msg f) (Hs.Var . Hs.UnQual . Hs.name $ "msg")))
+
+generatePutFunction :: Message -> Hs.Exp
+generatePutFunction msg@(Message name _ fields)
+  = if null fields
+      then Hs.App (Hs.Var . Hs.UnQual . Hs.name $ "return") (Hs.Tuple Hs.Boxed [])
+      else putApp msg fields
 
  -- | Generates a 'Data.Binary' instance for the messages.
 generateBinaryInstance :: [Message] -> Hs.Decl
 generateBinaryInstance msgs = decl where
   decl = Hs.InstDecl srcLoc [] name [type'] [decls]
-  decls = Hs.InsDecl . Hs.FunBind $ [getDef, putDef]
+  decls = Hs.InsDecl . Hs.FunBind $ [getDef] ++ map putDef msgs ++ [putUnknown]
   getDef = Hs.Match srcLoc (Hs.name "get") [] Nothing getRhs (Hs.BDecls [])
   getRhs = Hs.UnGuardedRhs getDo
   msgTypeVar = Hs.name $ "msgType"
@@ -182,13 +204,18 @@ generateBinaryInstance msgs = decl where
   getDoCase = Hs.Qualifier $ Hs.Case (Hs.Var . Hs.UnQual $ msgTypeVar) (getDoCases ++ [getEmptyDoCase])
   getDoCases = map (\msg@(Message n t _) -> Hs.Alt srcLoc (Hs.PLit . Hs.Int . fromIntegral $ t) (Hs.UnGuardedAlt (Hs.Var . Hs.UnQual . Hs.name . getFunctionName $ msg)) (Hs.BDecls [])) msgs
   getEmptyDoCase = Hs.Alt srcLoc Hs.PWildCard (Hs.UnGuardedAlt (Hs.App (Hs.Var . Hs.UnQual . Hs.name $ "fail") (Hs.Lit . Hs.String $ "Unknown msg type"))) (Hs.BDecls [])
-  putDef = Hs.Match srcLoc (Hs.name "put") [] Nothing putRhs (Hs.BDecls [])
-  putRhs = Hs.UnGuardedRhs $ Hs.App (Hs.Var . Hs.UnQual . Hs.name $ "oneof") (Hs.List (map arbitraryFunName msgs))
+  msgName = Hs.name $ "msg"
+  putDef msg = Hs.Match srcLoc (Hs.name "put") [Hs.PAsPat msgName (Hs.PRec (Hs.UnQual . messageConstr $ msg) [])] Nothing (putRhs msg) (Hs.BDecls [])
+  putRhs msg@(Message _ t _) = Hs.UnGuardedRhs $ Hs.App (Hs.App (Hs.Var fSeq) (Hs.App (Hs.Var . Hs.UnQual . Hs.name $ "putMessageType") (Hs.Lit . Hs.Int . fromIntegral $ t))) (generatePutFunction msg)
+  putUnknown = Hs.Match srcLoc (Hs.name "put") [Hs.PWildCard] Nothing (Hs.UnGuardedRhs $ Hs.App (Hs.Var . Hs.UnQual . Hs.name $ "fail") (Hs.Lit . Hs.String $ "Unknown msg type")) (Hs.BDecls [])
   arbitraryFunName = Hs.Var . Hs.UnQual . Hs.name . arbitraryFunctionName
   name = Hs.UnQual . Hs.name $ "Binary"
   type' = Hs.TyCon . Hs.UnQual $ itchMessageADT
 
--- ** Arbitrary function for a message
+-- ** Arbitrary instance and functions generation for a message.
+
+arbitraryFunctionName :: Message -> String
+arbitraryFunctionName (Message msg _ _) = T.unpack $ "arbitrary" <> fixName msg
 
 arbitraryApp :: Message -> [Field] -> Hs.Exp
 arbitraryApp _ []     = error "Sorry"
@@ -204,6 +231,17 @@ generateArbitraryFunction msg@(Message name _ fields) = decl where
   arbitraryRhs = Hs.UnGuardedRhs $ if null fields
                   then Hs.App (Hs.Var . Hs.UnQual . Hs.name $ "pure") (Hs.Con . Hs.UnQual . messageConstr $ msg)
                   else arbitraryApp msg fields
+
+-- | Generates 'Test.QuickCheck.Arbitrary' instance for the messages.
+generateArbitraryInstance :: [Message] -> Hs.Decl
+generateArbitraryInstance msgs = decl where
+  decl = Hs.InstDecl srcLoc [] name [type'] [decls]
+  decls = Hs.InsDecl . Hs.FunBind $ [arbitraryDef]
+  arbitraryDef = Hs.Match srcLoc (Hs.name "arbitrary") [] Nothing arbitraryRhs (Hs.BDecls [])
+  arbitraryRhs = Hs.UnGuardedRhs $ Hs.App (Hs.Var . Hs.UnQual . Hs.name $ "oneof") (Hs.List (map arbitraryFunName msgs))
+  arbitraryFunName = Hs.Var . Hs.UnQual . Hs.name . arbitraryFunctionName
+  name = Hs.UnQual . Hs.name $ "Arbitrary"
+  type' = Hs.TyCon . Hs.UnQual $ itchMessageADT
 
 -- ** Factory function for a message
 
@@ -237,10 +275,11 @@ generateMessageModule version msgs = Hs.Module srcLoc modName pragmas warningTex
           , "Data.Binary.Get"
           , "Control.Applicative"
           ]
-        decls = [binaryInstance, arbitraryInstance, messageDecl] ++ factoryFunctions ++ arbitraryFunctions
+        decls = getFunctions <> [binaryInstance, arbitraryInstance, messageDecl] <> factoryFunctions <> arbitraryFunctions
         factoryFunctions = concatMap generateFactoryFunction msgs
         arbitraryFunctions = concatMap generateArbitraryFunction msgs
         arbitraryInstance = generateArbitraryInstance msgs
+        getFunctions = concatMap generateGetFunction msgs
         binaryInstance = generateBinaryInstance msgs
         messageDecl = generateMessageDecl msgs
         importDecl name = Hs.ImportDecl srcLoc (Hs.ModuleName name) False False Nothing Nothing Nothing
