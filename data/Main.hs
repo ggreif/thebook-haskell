@@ -24,6 +24,7 @@ import System.Environment (getArgs)
 import System.FilePath (joinPath)
 import System.IO (hFlush, stdout)
 import Text.Read (readMaybe)
+import Control.Concurrent (threadDelay)
 
 -- * Datatypes
 
@@ -306,4 +307,10 @@ main = void $ do
           ppr = Hs.prettyPrintStyleMode Hs.style Hs.defaultMode
 
       putStr (ppr types)
+
+      putStrLn "Hello"
+
+      threadDelay (20 * 1000000)
+
+      putStrLn "Hello1"
 
