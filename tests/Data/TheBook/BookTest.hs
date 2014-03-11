@@ -10,12 +10,12 @@
 -----------------------------------------------------------------------------
 module Data.TheBook.BookTest (tests) where
 
-import Test.Tasty
-import Test.Tasty.QuickCheck as QC
-import Data.List
-import Data.Ord
-import Data.TheBook.Book as Book
-import Data.TheBook.Types as Types
+import           Data.List
+import           Data.Ord
+import           Data.TheBook.Book     as Book
+import           Data.TheBook.Types    as Types
+import           Test.Tasty
+import           Test.Tasty.QuickCheck as QC
 
 tests :: TestTree
 tests = testGroup "Data.TheBook.TheBookTest" [qcProps]

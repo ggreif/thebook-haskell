@@ -10,10 +10,10 @@
 -----------------------------------------------------------------------------
 module Data.TheBook.Types where
 
-import qualified Data.Time.Clock as Clock
-import Data.Text (Text)
-import Test.QuickCheck.Arbitrary (Arbitrary, arbitrary)
-import Test.QuickCheck.Gen (elements)
+import           Data.Text                 (Text)
+import qualified Data.Time.Clock           as Clock
+import           Test.QuickCheck.Arbitrary (Arbitrary, arbitrary)
+import           Test.QuickCheck.Gen       (elements)
 
 -- | Type of a price.
 type Price = Double

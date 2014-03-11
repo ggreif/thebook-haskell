@@ -23,15 +23,15 @@ module Data.TheBook.Book (
     , toList
  ) where
 
-import qualified Data.Foldable as Fold
-import qualified Data.Tuple as Tuple
-import Data.Map (Map)
-import qualified Data.Map.Strict as Map
-import qualified Data.List as List
-import qualified Data.Sequence as Seq
-import qualified Data.Maybe as Maybe
+import           Control.Arrow      ((&&&))
+import qualified Data.Foldable      as Fold
+import qualified Data.List          as List
+import           Data.Map           (Map)
+import qualified Data.Map.Strict    as Map
+import qualified Data.Maybe         as Maybe
+import qualified Data.Sequence      as Seq
 import qualified Data.TheBook.Types as Types
-import Control.Arrow ((&&&))
+import qualified Data.Tuple         as Tuple
 
 -- | Limit price passive order sitting on the 'Book'.
 data Entry = Entry {
