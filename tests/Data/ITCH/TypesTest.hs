@@ -10,26 +10,26 @@
 -----------------------------------------------------------------------------
 module Data.ITCH.TypesTest (tests) where
 
-import qualified Data.Binary as B
-import qualified Data.ByteString.Lazy as L
+import qualified Data.Binary           as B
 import qualified Data.ByteString.Char8 as B8
-import Test.Tasty
-import Test.Tasty.QuickCheck as QC
-import Data.List
-import Data.Ord
-import qualified Data.ITCH.Types as ITCH
-import Debug.Trace (trace, traceShow)
-import Data.Time.Calendar (Day, toGregorian, fromGregorian)
+import qualified Data.ByteString.Lazy  as L
+import           Data.Int
+import qualified Data.ITCH.Types       as ITCH
+import           Data.Time.Calendar    (Day, fromGregorian, toGregorian)
+import           Debug.Trace           (trace, traceShow)
+import           Test.Tasty
+import           Test.Tasty.QuickCheck as QC
 
 tests :: TestTree
 tests = testGroup "Data.TheBook.ITCHTest" [qcProps]
 
 qcProps = testGroup "(checked by QuickCheck)"
-  [ QC.testProperty "encode (decode date) == d" encodeDecodeDate
+  [ QC.testProperty "encode (decode date) == d" (encodeDecode 8 :: ITCH.Date -> Bool)
+  , QC.testProperty "encode (decode time) == time" (encodeDecode 8 :: ITCH.Time -> Bool)
   ]
 
-encodeDecodeDate :: ITCH.Date -> Bool
-encodeDecodeDate d@(ITCH.Date d1) =
+encodeDecode :: (Eq a, B.Binary a) => Int64 -> a -> Bool
+encodeDecode i d =
     let encoded = B.encode d
         decoded = B.decode encoded
-    in (d == decoded) && L.length encoded == 8
+    in (d == decoded) && L.length encoded == i

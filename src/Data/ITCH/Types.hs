@@ -1,7 +1,7 @@
+{-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE MultiWayIf #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE MultiWayIf                 #-}
+{-# LANGUAGE TypeFamilies               #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.ITCH
@@ -27,29 +27,31 @@ module Data.ITCH.Types (
   , getMessageType, putMessageType
   ) where
 
-import Data.Bits (Bits, shiftR, bit, testBit, (.|.))
-import Data.ByteString          (ByteString)
-import qualified Data.ByteString          as BS
-import qualified Data.ByteString.Char8    as BS8 (ByteString, pack)
-import qualified Data.ByteString.Internal as BSI
-import qualified Data.ByteString.Unsafe   as BSU
-import Data.Word
-import Data.Decimal (Decimal, realFracToDecimal)
-import Data.Binary (Binary, get, put)
-import Data.Binary.Get (Get, getByteString, getWord16le, getWord32le, getWord64le)
-import Data.Binary.Put (Put, putByteString, putWord16le, putWord32le, putWord64le)
-import Control.Applicative ((<$>), (<*>), (*>), pure)
-import Control.Monad (fail)
-import Data.Time.Format (formatTime)
-import qualified Data.TheBook.MarketData as Types
-import Foreign.Ptr (Ptr, plusPtr)
-import Foreign.Storable (peek, poke, Storable, sizeOf)
-import Test.QuickCheck.Arbitrary (Arbitrary, arbitrary)
-import Test.QuickCheck.Gen (Gen, suchThat, elements)
-import Data.Time.Clock (DiffTime, secondsToDiffTime)
-import Data.Time.Calendar (Day, toGregorian, fromGregorian)
-import System.Locale (defaultTimeLocale)
-import Debug.Trace (trace, traceShow)
+import           Control.Applicative       (pure, (*>), (<$>), (<*>))
+import           Control.Monad             (fail)
+import           Data.Binary               (Binary, get, put)
+import           Data.Binary.Get           (Get, getByteString, getWord16le,
+                                            getWord32le, getWord64le)
+import           Data.Binary.Put           (Put, putByteString, putWord16le,
+                                            putWord32le, putWord64le)
+import           Data.Bits                 (Bits, bit, shiftR, testBit, (.|.))
+import           Data.ByteString           (ByteString)
+import qualified Data.ByteString           as BS
+import qualified Data.ByteString.Char8     as BS8 (ByteString, pack)
+import qualified Data.ByteString.Internal  as BSI
+import qualified Data.ByteString.Unsafe    as BSU
+import           Data.Decimal              (Decimal, realFracToDecimal)
+import qualified Data.TheBook.MarketData   as Types
+import           Data.Time.Calendar        (Day, fromGregorian, toGregorian)
+import           Data.Time.LocalTime       (TimeOfDay, dayFractionToTimeOfDay)
+import           Data.Time.Format          (formatTime)
+import           Data.Word
+import           Debug.Trace               (trace, traceShow)
+import           Foreign.Ptr               (Ptr, plusPtr)
+import           Foreign.Storable          (Storable, peek, poke, sizeOf)
+import           System.Locale             (defaultTimeLocale)
+import           Test.QuickCheck.Arbitrary (Arbitrary, arbitrary)
+import           Test.QuickCheck.Gen       (Gen, elements, suchThat)
 
 -- * Data types
 -- | Data Type | Length   | Description
@@ -73,24 +75,22 @@ type BitField = Word8
 -- | Byte      | 1        | A single byte used to hold one ASCII character.
 type Byte = Word8
 
-tracee a = traceShow a a
-
 -- | Date      | 8        | Date specified in the YYYYMMDD format using ASCII characters.
 newtype Date = Date Day
   deriving (Eq, Show)
 instance Arbitrary Date where
   arbitrary = Date <$> (fromGregorian <$> suchThat arbitrary (> 0) <*> suchThat arbitrary (> 0) <*> suchThat arbitrary (> 0))
 instance Binary Date where
-  get = (\year month day -> Date $ fromGregorian year month day) <$> readNum 4 <*> readNum 2 <*> readNum 2
+  get = Date <$> (fromGregorian <$> readNum 4 <*> readNum 2 <*> readNum 2)
   put (Date d) = putByteString . BS8.pack $ formatTime defaultTimeLocale "%0Y%m%d" d
 
 -- | Time      | 8        | Time specified in the HH:MM:SS format using ASCII characters.
-newtype Time = Time DiffTime
+newtype Time = Time TimeOfDay
   deriving (Eq, Show)
 instance Arbitrary Time where
-  arbitrary = Time . secondsToDiffTime <$> arbitrary
+  arbitrary = Time . dayFractionToTimeOfDay <$> suchThat arbitrary (\d -> d >= 0 || d <= 1)
 instance Binary Time where
-  get = undefined
+  get = undefined -- Time <$> (fromGregorian <$> readNum 4 <*> readNum 2 <*> readNum 2)
   put (Time t) = undefined
 
 -- | Price     | 8        | Signed Little-Endian encoded eight byte integer field with eight implied decimal places.
@@ -334,7 +334,7 @@ unsafePackDecimal n0 =
             loop   q (p `plusPtr` negate 2)
         | n >= 10   = write2 n p
         | otherwise = poke p (0x30 + fromIntegral n)
-    
+
     write2 i0 p
         | i0 `seq` p `seq` False = undefined -- for strictness analysis
         | otherwise = do
@@ -415,7 +415,7 @@ numTwoPowerDigits p n0
         | d `seq` n `seq` False = undefined
         | n > 0     = go (d+1) (n `shiftR` p)
         | otherwise = d
-    
+
 -- This implementation is from:
 -- <http://www.serpentine.com/blog/2013/03/20/whats-good-for-c-is-good-for-haskell/>
 --
@@ -432,7 +432,7 @@ numDecimalDigits n0
     | otherwise  = go 1 (fromIntegral n0 :: Word64)
     where
     limit = fromIntegral (maxBound :: Word64)
-    
+
     fin n bound = if n >= bound then 1 else 0
     go k n
         | k `seq` False = undefined -- For strictness analysis
