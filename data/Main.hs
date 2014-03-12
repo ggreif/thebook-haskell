@@ -89,6 +89,9 @@ parseType _ _           = Nothing
 
 -- * AST generation
 
+dataITCHTypes :: Hs.ModuleName
+dataITCHTypes = Hs.ModuleName "Data.ITCH.Types"
+
 srcLoc :: Hs.SrcLoc
 srcLoc = Hs.SrcLoc {Hs.srcFilename = "foo.hs", Hs.srcLine = 1, Hs.srcColumn = 1}
 
@@ -134,7 +137,7 @@ fieldName (Message msg _ _) (Field name _) = T.unpack $ "_" <> fixNameCamel msg 
 
 fieldDecl :: Message -> Field -> ([Hs.Name], Hs.BangType)
 fieldDecl m@(Message msg _ _) f@(Field name t) 
-  = ([Hs.name $ fieldName m f], Hs.UnpackedTy . Hs.TyCon . Hs.UnQual . fieldTypeToName $ t)
+  = ([Hs.name $ fieldName m f], Hs.UnpackedTy . Hs.TyCon . Hs.Qual dataITCHTypes . fieldTypeToName $ t)
 
 messageConstr :: Message -> Hs.Name
 messageConstr m@(Message name _ _)
@@ -201,13 +204,13 @@ generateBinaryInstance msgs = decl where
   getDef = Hs.Match srcLoc (Hs.name "get") [] Nothing getRhs (Hs.BDecls [])
   getRhs = Hs.UnGuardedRhs getDo
   msgTypeVar = Hs.name $ "msgType"
-  getDo  = Hs.Do [Hs.Generator srcLoc (Hs.PVar msgTypeVar) (Hs.Var . Hs.UnQual . Hs.name $ "getMessageType"), getDoCase]
+  getDo  = Hs.Do [Hs.Generator srcLoc (Hs.PVar msgTypeVar) (Hs.Var . Hs.Qual dataITCHTypes . Hs.name $ "getMessageType"), getDoCase]
   getDoCase = Hs.Qualifier $ Hs.Case (Hs.Var . Hs.UnQual $ msgTypeVar) (getDoCases ++ [getEmptyDoCase])
   getDoCases = map (\msg@(Message n t _) -> Hs.Alt srcLoc (Hs.PLit . Hs.Int . fromIntegral $ t) (Hs.UnGuardedAlt (Hs.Var . Hs.UnQual . Hs.name . getFunctionName $ msg)) (Hs.BDecls [])) msgs
   getEmptyDoCase = Hs.Alt srcLoc Hs.PWildCard (Hs.UnGuardedAlt (Hs.App (Hs.Var . Hs.UnQual . Hs.name $ "fail") (Hs.Lit . Hs.String $ "Unknown msg type"))) (Hs.BDecls [])
   msgName = Hs.name $ "msg"
   putDef msg = Hs.Match srcLoc (Hs.name "put") [Hs.PAsPat msgName (Hs.PRec (Hs.UnQual . messageConstr $ msg) [])] Nothing (putRhs msg) (Hs.BDecls [])
-  putRhs msg@(Message _ t _) = Hs.UnGuardedRhs $ Hs.App (Hs.App (Hs.Var fSeq) (Hs.App (Hs.Var . Hs.UnQual . Hs.name $ "putMessageType") (Hs.Lit . Hs.Int . fromIntegral $ t))) (generatePutFunction msg)
+  putRhs msg@(Message _ t _) = Hs.UnGuardedRhs $ Hs.App (Hs.App (Hs.Var fSeq) (Hs.App (Hs.Var . Hs.Qual dataITCHTypes . Hs.name $ "putMessageType") (Hs.Lit . Hs.Int . fromIntegral $ t))) (generatePutFunction msg)
   putUnknown = Hs.Match srcLoc (Hs.name "put") [Hs.PWildCard] Nothing (Hs.UnGuardedRhs $ Hs.App (Hs.Var . Hs.UnQual . Hs.name $ "fail") (Hs.Lit . Hs.String $ "Unknown msg type")) (Hs.BDecls [])
   arbitraryFunName = Hs.Var . Hs.UnQual . Hs.name . arbitraryFunctionName
   name = Hs.UnQual . Hs.name $ "Binary"
@@ -255,7 +258,7 @@ generateFactoryFunction msg@(Message name _ fields) = decl where
   name' = Hs.Ident $ factoryFunctionName msg
   typeDef = Hs.TypeSig srcLoc [name'] types
   types = foldr1 Hs.TyFun $ fieldsT ++ [Hs.TyVar . Hs.name $ "ITCHMessage"]
-  fieldsT = map (Hs.TyVar . (\(Field _  t) -> fieldTypeToName t)) fields
+  fieldsT = map (Hs.TyCon . Hs.Qual dataITCHTypes . (\(Field _  t) -> fieldTypeToName t)) fields
   body = Hs.FunBind [Hs.Match srcLoc name' [] Nothing arbitraryRhs (Hs.BDecls [])]
   arbitraryRhs = Hs.UnGuardedRhs . Hs.Con . Hs.UnQual . messageConstr $ msg
 
@@ -267,15 +270,14 @@ generateMessageModule version msgs = Hs.Module srcLoc modName pragmas warningTex
         exports = Just [
             Hs.EThingAll . Hs.UnQual $ itchMessageADT
           ]
-        imports = importDecl <$> [
-            "Data.ITCH.Types"
-          , "Test.QuickCheck.Arbitrary"
+        imports = [dataItchTypesImport] <> (importDecl <$> [
+            "Test.QuickCheck.Arbitrary"
           , "Test.QuickCheck.Gen"
           , "Data.Binary"
           , "Data.Binary.Put"
           , "Data.Binary.Get"
           , "Control.Applicative"
-          ]
+          ])
         decls = getFunctions <> [binaryInstance, arbitraryInstance, messageDecl] <> factoryFunctions <> arbitraryFunctions
         factoryFunctions = concatMap generateFactoryFunction msgs
         arbitraryFunctions = concatMap generateArbitraryFunction msgs
@@ -284,6 +286,7 @@ generateMessageModule version msgs = Hs.Module srcLoc modName pragmas warningTex
         binaryInstance = generateBinaryInstance msgs
         messageDecl = generateMessageDecl msgs
         importDecl name = Hs.ImportDecl srcLoc (Hs.ModuleName name) False False Nothing Nothing Nothing
+        dataItchTypesImport = Hs.ImportDecl srcLoc (Hs.ModuleName "Data.ITCH.Types") True False Nothing (Just dataITCHTypes) Nothing
 
 main :: IO ()
 main = void $ do
@@ -310,7 +313,7 @@ main = void $ do
 
       putStrLn "Hello"
 
-      threadDelay (20 * 1000000)
+      threadDelay (5 * 1000000)
 
       putStrLn "Hello1"
 

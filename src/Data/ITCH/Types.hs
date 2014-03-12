@@ -22,7 +22,7 @@ module Data.ITCH.Types (
     MessageHeader, messageLength, messageType, messageHeaderLength
 
     -- | Types
-  , Alpha, BitField, Date(..), Time, UInt8, UInt16, UInt32, UInt64, Byte, Price
+  , Alpha, BitField, Date(..), Time(..), UInt8, UInt16, UInt32, UInt64, Byte, Price
 
     -- | Utilities
   , getMessageType, putMessageType

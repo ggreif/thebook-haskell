@@ -1,12 +1,12 @@
 module Data.ITCH.ITCH51 (ITCHMessage(..)) where
-import Data.ITCH.Types
+import qualified Data.ITCH.Types as Data.ITCH.Types
 import Test.QuickCheck.Arbitrary
 import Test.QuickCheck.Gen
 import Data.Binary
 import Data.Binary.Put
 import Data.Binary.Get
 import Control.Applicative
-
+ 
 getAddOrder :: Get ITCHMessage
 getAddOrder
   = (<*>)
@@ -210,7 +210,7 @@ getStatistics
  
 instance Binary ITCHMessage where
         get
-          = do msgType <- getMessageType
+          = do msgType <- Data.ITCH.Types.getMessageType
                case msgType of
                    65 -> getAddOrder
                    70 -> getAddAttributedOrder
@@ -239,7 +239,7 @@ instance Binary ITCHMessage where
                    119 -> getStatistics
                    _ -> fail "Unknown msg type"
         put msg@AddOrder{}
-          = (*>) (putMessageType 65)
+          = (*>) (Data.ITCH.Types.putMessageType 65)
               ((*>)
                  ((*>)
                     ((*>)
@@ -255,7 +255,7 @@ instance Binary ITCHMessage where
                     (put (_addOrderOrderID msg)))
                  (put (_addOrderNanosecond msg)))
         put msg@AddAttributedOrder{}
-          = (*>) (putMessageType 70)
+          = (*>) (Data.ITCH.Types.putMessageType 70)
               ((*>)
                  ((*>)
                     ((*>)
@@ -275,13 +275,13 @@ instance Binary ITCHMessage where
                     (put (_addAttributedOrderOrderID msg)))
                  (put (_addAttributedOrderNanosecond msg)))
         put msg@OrderDeleted{}
-          = (*>) (putMessageType 68)
+          = (*>) (Data.ITCH.Types.putMessageType 68)
               ((*>)
                  ((*>) (put (_orderDeletedFlags msg))
                     (put (_orderDeletedOrderID msg)))
                  (put (_orderDeletedNanosecond msg)))
         put msg@OrderModified{}
-          = (*>) (putMessageType 85)
+          = (*>) (Data.ITCH.Types.putMessageType 85)
               ((*>)
                  ((*>)
                     ((*>)
@@ -291,7 +291,7 @@ instance Binary ITCHMessage where
                     (put (_orderModifiedOrderID msg)))
                  (put (_orderModifiedNanosecond msg)))
         put msg@OrderBookClear{}
-          = (*>) (putMessageType 121)
+          = (*>) (Data.ITCH.Types.putMessageType 121)
               ((*>)
                  ((*>)
                     ((*>)
@@ -300,28 +300,31 @@ instance Binary ITCHMessage where
                        (put (_orderBookClearReserved1 msg)))
                     (put (_orderBookClearLSEInstrumentID msg)))
                  (put (_orderBookClearNanosecond msg)))
-        put msg@Time{} = (*>) (putMessageType 84) (put (_timeSeconds msg))
+        put msg@Time{}
+          = (*>) (Data.ITCH.Types.putMessageType 84) (put (_timeSeconds msg))
         put msg@LoginRequest{}
-          = (*>) (putMessageType 1)
+          = (*>) (Data.ITCH.Types.putMessageType 1)
               ((*>) (put (_loginRequestPassword msg))
                  (put (_loginRequestUsername msg)))
         put msg@ReplayRequest{}
-          = (*>) (putMessageType 3)
+          = (*>) (Data.ITCH.Types.putMessageType 3)
               ((*>)
                  ((*>) (put (_replayRequestCount msg))
                     (put (_replayRequestFirstMessage msg)))
                  (put (_replayRequestMarketDataGroup msg)))
         put msg@SnapshotRequest{}
-          = (*>) (putMessageType 129)
+          = (*>) (Data.ITCH.Types.putMessageType 129)
               ((*>)
                  ((*>) (put (_snapshotRequestLSEInstrumentID msg))
                     (put (_snapshotRequestSegment msg)))
                  (put (_snapshotRequestSequenceNumber msg)))
-        put msg@LogoutRequest{} = (*>) (putMessageType 5) (return ())
+        put msg@LogoutRequest{}
+          = (*>) (Data.ITCH.Types.putMessageType 5) (return ())
         put msg@LoginResponse{}
-          = (*>) (putMessageType 2) (put (_loginResponseStatus msg))
+          = (*>) (Data.ITCH.Types.putMessageType 2)
+              (put (_loginResponseStatus msg))
         put msg@ReplayResponse{}
-          = (*>) (putMessageType 4)
+          = (*>) (Data.ITCH.Types.putMessageType 4)
               ((*>)
                  ((*>)
                     ((*>) (put (_replayResponseStatus msg))
@@ -329,13 +332,13 @@ instance Binary ITCHMessage where
                     (put (_replayResponseFirstMessage msg)))
                  (put (_replayResponseMarketDataGroup msg)))
         put msg@SnapshotResponse{}
-          = (*>) (putMessageType 130)
+          = (*>) (Data.ITCH.Types.putMessageType 130)
               ((*>)
                  ((*>) (put (_snapshotResponseStatus msg))
                     (put (_snapshotResponseOrderCount msg)))
                  (put (_snapshotResponseSequenceNumber msg)))
         put msg@SnapshotComplete{}
-          = (*>) (putMessageType 131)
+          = (*>) (Data.ITCH.Types.putMessageType 131)
               ((*>)
                  ((*>)
                     ((*>) (put (_snapshotCompleteFlags msg))
@@ -343,11 +346,11 @@ instance Binary ITCHMessage where
                     (put (_snapshotCompleteSegment msg)))
                  (put (_snapshotCompleteSequenceNumber msg)))
         put msg@SystemEvent{}
-          = (*>) (putMessageType 83)
+          = (*>) (Data.ITCH.Types.putMessageType 83)
               ((*>) (put (_systemEventEventCode msg))
                  (put (_systemEventNanosecond msg)))
         put msg@SymbolDirectory{}
-          = (*>) (putMessageType 82)
+          = (*>) (Data.ITCH.Types.putMessageType 82)
               ((*>)
                  ((*>)
                     ((*>)
@@ -373,7 +376,7 @@ instance Binary ITCHMessage where
                     (put (_symbolDirectoryLSEInstrumentID msg)))
                  (put (_symbolDirectoryNanosecond msg)))
         put msg@SymbolStatus{}
-          = (*>) (putMessageType 72)
+          = (*>) (Data.ITCH.Types.putMessageType 72)
               ((*>)
                  ((*>)
                     ((*>)
@@ -393,7 +396,7 @@ instance Binary ITCHMessage where
                     (put (_symbolStatusLSEInstrumentID msg)))
                  (put (_symbolStatusNanosecond msg)))
         put msg@OrderExecuted{}
-          = (*>) (putMessageType 69)
+          = (*>) (Data.ITCH.Types.putMessageType 69)
               ((*>)
                  ((*>)
                     ((*>) (put (_orderExecutedTradeID msg))
@@ -401,7 +404,7 @@ instance Binary ITCHMessage where
                     (put (_orderExecutedOrderID msg)))
                  (put (_orderExecutedNanosecond msg)))
         put msg@OrderExecutedWithPrice{}
-          = (*>) (putMessageType 67)
+          = (*>) (Data.ITCH.Types.putMessageType 67)
               ((*>)
                  ((*>)
                     ((*>)
@@ -415,7 +418,7 @@ instance Binary ITCHMessage where
                     (put (_orderExecutedWithPriceOrderID msg)))
                  (put (_orderExecutedWithPriceNanosecond msg)))
         put msg@Trade{}
-          = (*>) (putMessageType 80)
+          = (*>) (Data.ITCH.Types.putMessageType 80)
               ((*>)
                  ((*>)
                     ((*>)
@@ -430,7 +433,7 @@ instance Binary ITCHMessage where
                     (put (_tradeExecutedQuantity msg)))
                  (put (_tradeNanosecond msg)))
         put msg@AuctionTrade{}
-          = (*>) (putMessageType 81)
+          = (*>) (Data.ITCH.Types.putMessageType 81)
               ((*>)
                  ((*>)
                     ((*>)
@@ -446,13 +449,13 @@ instance Binary ITCHMessage where
                     (put (_auctionTradeQuantity msg)))
                  (put (_auctionTradeNanosecond msg)))
         put msg@TradeBreak{}
-          = (*>) (putMessageType 66)
+          = (*>) (Data.ITCH.Types.putMessageType 66)
               ((*>)
                  ((*>) (put (_tradeBreakTradeType msg))
                     (put (_tradeBreakTradeID msg)))
                  (put (_tradeBreakNanosecond msg)))
         put msg@AuctionInfo{}
-          = (*>) (putMessageType 73)
+          = (*>) (Data.ITCH.Types.putMessageType 73)
               ((*>)
                  ((*>)
                     ((*>)
@@ -470,7 +473,7 @@ instance Binary ITCHMessage where
                     (put (_auctionInfoPairedQuantity msg)))
                  (put (_auctionInfoNanosecond msg)))
         put msg@OffBookTrade{}
-          = (*>) (putMessageType 120)
+          = (*>) (Data.ITCH.Types.putMessageType 120)
               ((*>)
                  ((*>)
                     ((*>)
@@ -498,7 +501,7 @@ instance Binary ITCHMessage where
                     (put (_offBookTradeExecutedQuantity msg)))
                  (put (_offBookTradeNanosecond msg)))
         put msg@Statistics{}
-          = (*>) (putMessageType 119)
+          = (*>) (Data.ITCH.Types.putMessageType 119)
               ((*>)
                  ((*>)
                     ((*>)
@@ -514,132 +517,425 @@ instance Binary ITCHMessage where
                     (put (_statisticsLSEInstrumentID msg)))
                  (put (_statisticsNanosecond msg)))
         put _ = fail "Unknown msg type"
-
+ 
+instance Arbitrary ITCHMessage where
+        arbitrary
+          = oneof
+              [arbitraryAddOrder, arbitraryAddAttributedOrder,
+               arbitraryOrderDeleted, arbitraryOrderModified,
+               arbitraryOrderBookClear, arbitraryTime, arbitraryLoginRequest,
+               arbitraryReplayRequest, arbitrarySnapshotRequest,
+               arbitraryLogoutRequest, arbitraryLoginResponse,
+               arbitraryReplayResponse, arbitrarySnapshotResponse,
+               arbitrarySnapshotComplete, arbitrarySystemEvent,
+               arbitrarySymbolDirectory, arbitrarySymbolStatus,
+               arbitraryOrderExecuted, arbitraryOrderExecutedWithPrice,
+               arbitraryTrade, arbitraryAuctionTrade, arbitraryTradeBreak,
+               arbitraryAuctionInfo, arbitraryOffBookTrade, arbitraryStatistics]
+ 
+data ITCHMessage = AddOrder{_addOrderNanosecond ::
+                            {-# UNPACK #-} !Data.ITCH.Types.UInt32,
+                            _addOrderOrderID :: {-# UNPACK #-} !Data.ITCH.Types.UInt64,
+                            _addOrderSide :: {-# UNPACK #-} !Data.ITCH.Types.Byte,
+                            _addOrderQuantity :: {-# UNPACK #-} !Data.ITCH.Types.UInt32,
+                            _addOrderLSEInstrumentID :: {-# UNPACK #-} !Data.ITCH.Types.UInt32,
+                            _addOrderReserved1 :: {-# UNPACK #-} !Data.ITCH.Types.Byte,
+                            _addOrderReserved2 :: {-# UNPACK #-} !Data.ITCH.Types.Byte,
+                            _addOrderPrice :: {-# UNPACK #-} !Data.ITCH.Types.Price,
+                            _addOrderFlags :: {-# UNPACK #-} !Data.ITCH.Types.BitField}
+                 | AddAttributedOrder{_addAttributedOrderNanosecond ::
+                                      {-# UNPACK #-} !Data.ITCH.Types.UInt32,
+                                      _addAttributedOrderOrderID ::
+                                      {-# UNPACK #-} !Data.ITCH.Types.UInt64,
+                                      _addAttributedOrderSide ::
+                                      {-# UNPACK #-} !Data.ITCH.Types.Byte,
+                                      _addAttributedOrderQuantity ::
+                                      {-# UNPACK #-} !Data.ITCH.Types.UInt32,
+                                      _addAttributedOrderLSEInstrumentID ::
+                                      {-# UNPACK #-} !Data.ITCH.Types.UInt32,
+                                      _addAttributedOrderReserved1 ::
+                                      {-# UNPACK #-} !Data.ITCH.Types.Byte,
+                                      _addAttributedOrderReserved2 ::
+                                      {-# UNPACK #-} !Data.ITCH.Types.Byte,
+                                      _addAttributedOrderPrice ::
+                                      {-# UNPACK #-} !Data.ITCH.Types.Price,
+                                      _addAttributedOrderAttribution ::
+                                      {-# UNPACK #-} !Data.ITCH.Types.Alpha,
+                                      _addAttributedOrderFlags ::
+                                      {-# UNPACK #-} !Data.ITCH.Types.BitField}
+                 | OrderDeleted{_orderDeletedNanosecond ::
+                                {-# UNPACK #-} !Data.ITCH.Types.UInt32,
+                                _orderDeletedOrderID :: {-# UNPACK #-} !Data.ITCH.Types.UInt64,
+                                _orderDeletedFlags :: {-# UNPACK #-} !Data.ITCH.Types.BitField}
+                 | OrderModified{_orderModifiedNanosecond ::
+                                 {-# UNPACK #-} !Data.ITCH.Types.UInt32,
+                                 _orderModifiedOrderID :: {-# UNPACK #-} !Data.ITCH.Types.UInt64,
+                                 _orderModifiedNewQuantity ::
+                                 {-# UNPACK #-} !Data.ITCH.Types.UInt32,
+                                 _orderModifiedNewPrice :: {-# UNPACK #-} !Data.ITCH.Types.Price,
+                                 _orderModifiedFlags :: {-# UNPACK #-} !Data.ITCH.Types.BitField}
+                 | OrderBookClear{_orderBookClearNanosecond ::
+                                  {-# UNPACK #-} !Data.ITCH.Types.UInt32,
+                                  _orderBookClearLSEInstrumentID ::
+                                  {-# UNPACK #-} !Data.ITCH.Types.UInt32,
+                                  _orderBookClearReserved1 :: {-# UNPACK #-} !Data.ITCH.Types.Byte,
+                                  _orderBookClearReserved2 :: {-# UNPACK #-} !Data.ITCH.Types.Byte,
+                                  _orderBookClearFlags :: {-# UNPACK #-} !Data.ITCH.Types.BitField}
+                 | Time{_timeSeconds :: {-# UNPACK #-} !Data.ITCH.Types.UInt32}
+                 | LoginRequest{_loginRequestUsername ::
+                                {-# UNPACK #-} !Data.ITCH.Types.Alpha,
+                                _loginRequestPassword :: {-# UNPACK #-} !Data.ITCH.Types.Alpha}
+                 | ReplayRequest{_replayRequestMarketDataGroup ::
+                                 {-# UNPACK #-} !Data.ITCH.Types.Byte,
+                                 _replayRequestFirstMessage ::
+                                 {-# UNPACK #-} !Data.ITCH.Types.UInt32,
+                                 _replayRequestCount :: {-# UNPACK #-} !Data.ITCH.Types.UInt8}
+                 | SnapshotRequest{_snapshotRequestSequenceNumber ::
+                                   {-# UNPACK #-} !Data.ITCH.Types.UInt32,
+                                   _snapshotRequestSegment :: {-# UNPACK #-} !Data.ITCH.Types.Alpha,
+                                   _snapshotRequestLSEInstrumentID ::
+                                   {-# UNPACK #-} !Data.ITCH.Types.UInt32}
+                 | LogoutRequest{}
+                 | LoginResponse{_loginResponseStatus ::
+                                 {-# UNPACK #-} !Data.ITCH.Types.Byte}
+                 | ReplayResponse{_replayResponseMarketDataGroup ::
+                                  {-# UNPACK #-} !Data.ITCH.Types.Byte,
+                                  _replayResponseFirstMessage ::
+                                  {-# UNPACK #-} !Data.ITCH.Types.UInt32,
+                                  _replayResponseCount :: {-# UNPACK #-} !Data.ITCH.Types.UInt8,
+                                  _replayResponseStatus :: {-# UNPACK #-} !Data.ITCH.Types.Byte}
+                 | SnapshotResponse{_snapshotResponseSequenceNumber ::
+                                    {-# UNPACK #-} !Data.ITCH.Types.UInt32,
+                                    _snapshotResponseOrderCount ::
+                                    {-# UNPACK #-} !Data.ITCH.Types.UInt32,
+                                    _snapshotResponseStatus :: {-# UNPACK #-} !Data.ITCH.Types.Byte}
+                 | SnapshotComplete{_snapshotCompleteSequenceNumber ::
+                                    {-# UNPACK #-} !Data.ITCH.Types.UInt32,
+                                    _snapshotCompleteSegment ::
+                                    {-# UNPACK #-} !Data.ITCH.Types.Alpha,
+                                    _snapshotCompleteLSEInstrumentID ::
+                                    {-# UNPACK #-} !Data.ITCH.Types.UInt32,
+                                    _snapshotCompleteFlags ::
+                                    {-# UNPACK #-} !Data.ITCH.Types.BitField}
+                 | SystemEvent{_systemEventNanosecond ::
+                               {-# UNPACK #-} !Data.ITCH.Types.UInt32,
+                               _systemEventEventCode :: {-# UNPACK #-} !Data.ITCH.Types.Byte}
+                 | SymbolDirectory{_symbolDirectoryNanosecond ::
+                                   {-# UNPACK #-} !Data.ITCH.Types.UInt32,
+                                   _symbolDirectoryLSEInstrumentID ::
+                                   {-# UNPACK #-} !Data.ITCH.Types.UInt32,
+                                   _symbolDirectoryReserved1 ::
+                                   {-# UNPACK #-} !Data.ITCH.Types.Byte,
+                                   _symbolDirectoryReserved2 ::
+                                   {-# UNPACK #-} !Data.ITCH.Types.Byte,
+                                   _symbolDirectorySymbolStatus ::
+                                   {-# UNPACK #-} !Data.ITCH.Types.Alpha,
+                                   _symbolDirectoryISIN :: {-# UNPACK #-} !Data.ITCH.Types.Alpha,
+                                   _symbolDirectorySEDOL :: {-# UNPACK #-} !Data.ITCH.Types.Alpha,
+                                   _symbolDirectorySegment :: {-# UNPACK #-} !Data.ITCH.Types.Alpha,
+                                   _symbolDirectoryUnderlying ::
+                                   {-# UNPACK #-} !Data.ITCH.Types.Alpha,
+                                   _symbolDirectoryCurrency ::
+                                   {-# UNPACK #-} !Data.ITCH.Types.Alpha,
+                                   _symbolDirectoryTargetBook ::
+                                   {-# UNPACK #-} !Data.ITCH.Types.Byte,
+                                   _symbolDirectorySecurityExchange ::
+                                   {-# UNPACK #-} !Data.ITCH.Types.Alpha,
+                                   _symbolDirectoryPreviousClosePrice ::
+                                   {-# UNPACK #-} !Data.ITCH.Types.Price}
+                 | SymbolStatus{_symbolStatusNanosecond ::
+                                {-# UNPACK #-} !Data.ITCH.Types.UInt32,
+                                _symbolStatusLSEInstrumentID ::
+                                {-# UNPACK #-} !Data.ITCH.Types.UInt32,
+                                _symbolStatusReserved1 :: {-# UNPACK #-} !Data.ITCH.Types.Byte,
+                                _symbolStatusReserved2 :: {-# UNPACK #-} !Data.ITCH.Types.Byte,
+                                _symbolStatusTradingStatus :: {-# UNPACK #-} !Data.ITCH.Types.Byte,
+                                _symbolStatusFlags :: {-# UNPACK #-} !Data.ITCH.Types.BitField,
+                                _symbolStatusHaltReason :: {-# UNPACK #-} !Data.ITCH.Types.Alpha,
+                                _symbolStatusSessionChangeReason ::
+                                {-# UNPACK #-} !Data.ITCH.Types.UInt8,
+                                _symbolStatusNewEndTime :: {-# UNPACK #-} !Data.ITCH.Types.Time,
+                                _symbolStatusBookType :: {-# UNPACK #-} !Data.ITCH.Types.UInt8}
+                 | OrderExecuted{_orderExecutedNanosecond ::
+                                 {-# UNPACK #-} !Data.ITCH.Types.UInt32,
+                                 _orderExecutedOrderID :: {-# UNPACK #-} !Data.ITCH.Types.UInt64,
+                                 _orderExecutedExecutedQuantity ::
+                                 {-# UNPACK #-} !Data.ITCH.Types.UInt32,
+                                 _orderExecutedTradeID :: {-# UNPACK #-} !Data.ITCH.Types.UInt64}
+                 | OrderExecutedWithPrice{_orderExecutedWithPriceNanosecond ::
+                                          {-# UNPACK #-} !Data.ITCH.Types.UInt32,
+                                          _orderExecutedWithPriceOrderID ::
+                                          {-# UNPACK #-} !Data.ITCH.Types.UInt64,
+                                          _orderExecutedWithPriceExecutedQuantity ::
+                                          {-# UNPACK #-} !Data.ITCH.Types.UInt32,
+                                          _orderExecutedWithPriceDisplayQuantity ::
+                                          {-# UNPACK #-} !Data.ITCH.Types.UInt32,
+                                          _orderExecutedWithPriceTradeID ::
+                                          {-# UNPACK #-} !Data.ITCH.Types.UInt64,
+                                          _orderExecutedWithPricePrintable ::
+                                          {-# UNPACK #-} !Data.ITCH.Types.Byte,
+                                          _orderExecutedWithPricePrice ::
+                                          {-# UNPACK #-} !Data.ITCH.Types.Price}
+                 | Trade{_tradeNanosecond :: {-# UNPACK #-} !Data.ITCH.Types.UInt32,
+                         _tradeExecutedQuantity :: {-# UNPACK #-} !Data.ITCH.Types.UInt32,
+                         _tradeLSEInstrumentID :: {-# UNPACK #-} !Data.ITCH.Types.UInt32,
+                         _tradeReserved1 :: {-# UNPACK #-} !Data.ITCH.Types.Byte,
+                         _tradeReserved2 :: {-# UNPACK #-} !Data.ITCH.Types.Byte,
+                         _tradePrice :: {-# UNPACK #-} !Data.ITCH.Types.Price,
+                         _tradeTradeID :: {-# UNPACK #-} !Data.ITCH.Types.UInt64,
+                         _tradeSideOfAggressor :: {-# UNPACK #-} !Data.ITCH.Types.Byte}
+                 | AuctionTrade{_auctionTradeNanosecond ::
+                                {-# UNPACK #-} !Data.ITCH.Types.UInt32,
+                                _auctionTradeQuantity :: {-# UNPACK #-} !Data.ITCH.Types.UInt32,
+                                _auctionTradeLSEInstrumentID ::
+                                {-# UNPACK #-} !Data.ITCH.Types.UInt32,
+                                _auctionTradeReserved1 :: {-# UNPACK #-} !Data.ITCH.Types.Byte,
+                                _auctionTradeReserved2 :: {-# UNPACK #-} !Data.ITCH.Types.Byte,
+                                _auctionTradePrice :: {-# UNPACK #-} !Data.ITCH.Types.Price,
+                                _auctionTradeTradeID :: {-# UNPACK #-} !Data.ITCH.Types.UInt64,
+                                _auctionTradeAuctionType :: {-# UNPACK #-} !Data.ITCH.Types.Byte}
+                 | TradeBreak{_tradeBreakNanosecond ::
+                              {-# UNPACK #-} !Data.ITCH.Types.UInt32,
+                              _tradeBreakTradeID :: {-# UNPACK #-} !Data.ITCH.Types.UInt64,
+                              _tradeBreakTradeType :: {-# UNPACK #-} !Data.ITCH.Types.Byte}
+                 | AuctionInfo{_auctionInfoNanosecond ::
+                               {-# UNPACK #-} !Data.ITCH.Types.UInt32,
+                               _auctionInfoPairedQuantity ::
+                               {-# UNPACK #-} !Data.ITCH.Types.UInt32,
+                               _auctionInfoImbalanceQuantity ::
+                               {-# UNPACK #-} !Data.ITCH.Types.UInt32,
+                               _auctionInfoImbalanceDirection ::
+                               {-# UNPACK #-} !Data.ITCH.Types.Byte,
+                               _auctionInfoLSEInstrumentID ::
+                               {-# UNPACK #-} !Data.ITCH.Types.UInt32,
+                               _auctionInfoReserved1 :: {-# UNPACK #-} !Data.ITCH.Types.Byte,
+                               _auctionInfoReserved2 :: {-# UNPACK #-} !Data.ITCH.Types.Byte,
+                               _auctionInfoPrice :: {-# UNPACK #-} !Data.ITCH.Types.Price,
+                               _auctionInfoAuctionType :: {-# UNPACK #-} !Data.ITCH.Types.Byte}
+                 | OffBookTrade{_offBookTradeNanosecond ::
+                                {-# UNPACK #-} !Data.ITCH.Types.UInt32,
+                                _offBookTradeExecutedQuantity ::
+                                {-# UNPACK #-} !Data.ITCH.Types.UInt32,
+                                _offBookTradeLSEInstrumentID ::
+                                {-# UNPACK #-} !Data.ITCH.Types.UInt32,
+                                _offBookTradeReserved1 :: {-# UNPACK #-} !Data.ITCH.Types.Byte,
+                                _offBookTradeReserved2 :: {-# UNPACK #-} !Data.ITCH.Types.Byte,
+                                _offBookTradePrice :: {-# UNPACK #-} !Data.ITCH.Types.Price,
+                                _offBookTradeTradeID :: {-# UNPACK #-} !Data.ITCH.Types.UInt64,
+                                _offBookTradeOffBookTradeType ::
+                                {-# UNPACK #-} !Data.ITCH.Types.Alpha,
+                                _offBookTradeTradeTime :: {-# UNPACK #-} !Data.ITCH.Types.Time,
+                                _offBookTradeTradeDate :: {-# UNPACK #-} !Data.ITCH.Types.Date,
+                                _offBookTradeTradedCurrency ::
+                                {-# UNPACK #-} !Data.ITCH.Types.Alpha,
+                                _offBookTradeOriginalPrice ::
+                                {-# UNPACK #-} !Data.ITCH.Types.Price,
+                                _offBookTradeExecutionVenue ::
+                                {-# UNPACK #-} !Data.ITCH.Types.Alpha,
+                                _offBookTradeFlags :: {-# UNPACK #-} !Data.ITCH.Types.BitField}
+                 | Statistics{_statisticsNanosecond ::
+                              {-# UNPACK #-} !Data.ITCH.Types.UInt32,
+                              _statisticsLSEInstrumentID ::
+                              {-# UNPACK #-} !Data.ITCH.Types.UInt32,
+                              _statisticsReserved1 :: {-# UNPACK #-} !Data.ITCH.Types.Byte,
+                              _statisticsReserved2 :: {-# UNPACK #-} !Data.ITCH.Types.Byte,
+                              _statisticsLSEGStatisticsType ::
+                              {-# UNPACK #-} !Data.ITCH.Types.Alpha,
+                              _statisticsPrice :: {-# UNPACK #-} !Data.ITCH.Types.Price,
+                              _statisticsOpenClosePriceIndicator ::
+                              {-# UNPACK #-} !Data.ITCH.Types.Alpha,
+                              _statisticsFlags :: {-# UNPACK #-} !Data.ITCH.Types.BitField}
+                 deriving (Show, Eq)
+ 
 addOrder ::
-         UInt32 ->
-           UInt64 ->
-             Byte ->
-               UInt32 ->
-                 UInt32 -> Byte -> Byte -> Price -> BitField -> ITCHMessage
+         Data.ITCH.Types.UInt32 ->
+           Data.ITCH.Types.UInt64 ->
+             Data.ITCH.Types.Byte ->
+               Data.ITCH.Types.UInt32 ->
+                 Data.ITCH.Types.UInt32 ->
+                   Data.ITCH.Types.Byte ->
+                     Data.ITCH.Types.Byte ->
+                       Data.ITCH.Types.Price -> Data.ITCH.Types.BitField -> ITCHMessage
 addOrder = AddOrder
  
 addAttributedOrder ::
-                   UInt32 ->
-                     UInt64 ->
-                       Byte ->
-                         UInt32 ->
-                           UInt32 -> Byte -> Byte -> Price -> Alpha -> BitField -> ITCHMessage
+                   Data.ITCH.Types.UInt32 ->
+                     Data.ITCH.Types.UInt64 ->
+                       Data.ITCH.Types.Byte ->
+                         Data.ITCH.Types.UInt32 ->
+                           Data.ITCH.Types.UInt32 ->
+                             Data.ITCH.Types.Byte ->
+                               Data.ITCH.Types.Byte ->
+                                 Data.ITCH.Types.Price ->
+                                   Data.ITCH.Types.Alpha -> Data.ITCH.Types.BitField -> ITCHMessage
 addAttributedOrder = AddAttributedOrder
  
-orderDeleted :: UInt32 -> UInt64 -> BitField -> ITCHMessage
+orderDeleted ::
+             Data.ITCH.Types.UInt32 ->
+               Data.ITCH.Types.UInt64 -> Data.ITCH.Types.BitField -> ITCHMessage
 orderDeleted = OrderDeleted
  
 orderModified ::
-              UInt32 -> UInt64 -> UInt32 -> Price -> BitField -> ITCHMessage
+              Data.ITCH.Types.UInt32 ->
+                Data.ITCH.Types.UInt64 ->
+                  Data.ITCH.Types.UInt32 ->
+                    Data.ITCH.Types.Price -> Data.ITCH.Types.BitField -> ITCHMessage
 orderModified = OrderModified
  
 orderBookClear ::
-               UInt32 -> UInt32 -> Byte -> Byte -> BitField -> ITCHMessage
+               Data.ITCH.Types.UInt32 ->
+                 Data.ITCH.Types.UInt32 ->
+                   Data.ITCH.Types.Byte ->
+                     Data.ITCH.Types.Byte -> Data.ITCH.Types.BitField -> ITCHMessage
 orderBookClear = OrderBookClear
  
-time :: UInt32 -> ITCHMessage
+time :: Data.ITCH.Types.UInt32 -> ITCHMessage
 time = Time
  
-loginRequest :: Alpha -> Alpha -> ITCHMessage
+loginRequest ::
+             Data.ITCH.Types.Alpha -> Data.ITCH.Types.Alpha -> ITCHMessage
 loginRequest = LoginRequest
  
-replayRequest :: Byte -> UInt32 -> UInt8 -> ITCHMessage
+replayRequest ::
+              Data.ITCH.Types.Byte ->
+                Data.ITCH.Types.UInt32 -> Data.ITCH.Types.UInt8 -> ITCHMessage
 replayRequest = ReplayRequest
  
-snapshotRequest :: UInt32 -> Alpha -> UInt32 -> ITCHMessage
+snapshotRequest ::
+                Data.ITCH.Types.UInt32 ->
+                  Data.ITCH.Types.Alpha -> Data.ITCH.Types.UInt32 -> ITCHMessage
 snapshotRequest = SnapshotRequest
  
 logoutRequest :: ITCHMessage
 logoutRequest = LogoutRequest
  
-loginResponse :: Byte -> ITCHMessage
+loginResponse :: Data.ITCH.Types.Byte -> ITCHMessage
 loginResponse = LoginResponse
  
-replayResponse :: Byte -> UInt32 -> UInt8 -> Byte -> ITCHMessage
+replayResponse ::
+               Data.ITCH.Types.Byte ->
+                 Data.ITCH.Types.UInt32 ->
+                   Data.ITCH.Types.UInt8 -> Data.ITCH.Types.Byte -> ITCHMessage
 replayResponse = ReplayResponse
  
-snapshotResponse :: UInt32 -> UInt32 -> Byte -> ITCHMessage
+snapshotResponse ::
+                 Data.ITCH.Types.UInt32 ->
+                   Data.ITCH.Types.UInt32 -> Data.ITCH.Types.Byte -> ITCHMessage
 snapshotResponse = SnapshotResponse
  
 snapshotComplete ::
-                 UInt32 -> Alpha -> UInt32 -> BitField -> ITCHMessage
+                 Data.ITCH.Types.UInt32 ->
+                   Data.ITCH.Types.Alpha ->
+                     Data.ITCH.Types.UInt32 -> Data.ITCH.Types.BitField -> ITCHMessage
 snapshotComplete = SnapshotComplete
  
-systemEvent :: UInt32 -> Byte -> ITCHMessage
+systemEvent ::
+            Data.ITCH.Types.UInt32 -> Data.ITCH.Types.Byte -> ITCHMessage
 systemEvent = SystemEvent
  
 symbolDirectory ::
-                UInt32 ->
-                  UInt32 ->
-                    Byte ->
-                      Byte ->
-                        Alpha ->
-                          Alpha ->
-                            Alpha ->
-                              Alpha -> Alpha -> Alpha -> Byte -> Alpha -> Price -> ITCHMessage
+                Data.ITCH.Types.UInt32 ->
+                  Data.ITCH.Types.UInt32 ->
+                    Data.ITCH.Types.Byte ->
+                      Data.ITCH.Types.Byte ->
+                        Data.ITCH.Types.Alpha ->
+                          Data.ITCH.Types.Alpha ->
+                            Data.ITCH.Types.Alpha ->
+                              Data.ITCH.Types.Alpha ->
+                                Data.ITCH.Types.Alpha ->
+                                  Data.ITCH.Types.Alpha ->
+                                    Data.ITCH.Types.Byte ->
+                                      Data.ITCH.Types.Alpha -> Data.ITCH.Types.Price -> ITCHMessage
 symbolDirectory = SymbolDirectory
  
 symbolStatus ::
-             UInt32 ->
-               UInt32 ->
-                 Byte ->
-                   Byte ->
-                     Byte -> BitField -> Alpha -> UInt8 -> Time -> UInt8 -> ITCHMessage
+             Data.ITCH.Types.UInt32 ->
+               Data.ITCH.Types.UInt32 ->
+                 Data.ITCH.Types.Byte ->
+                   Data.ITCH.Types.Byte ->
+                     Data.ITCH.Types.Byte ->
+                       Data.ITCH.Types.BitField ->
+                         Data.ITCH.Types.Alpha ->
+                           Data.ITCH.Types.UInt8 ->
+                             Data.ITCH.Types.Time -> Data.ITCH.Types.UInt8 -> ITCHMessage
 symbolStatus = SymbolStatus
  
 orderExecuted ::
-              UInt32 -> UInt64 -> UInt32 -> UInt64 -> ITCHMessage
+              Data.ITCH.Types.UInt32 ->
+                Data.ITCH.Types.UInt64 ->
+                  Data.ITCH.Types.UInt32 -> Data.ITCH.Types.UInt64 -> ITCHMessage
 orderExecuted = OrderExecuted
  
 orderExecutedWithPrice ::
-                       UInt32 ->
-                         UInt64 ->
-                           UInt32 -> UInt32 -> UInt64 -> Byte -> Price -> ITCHMessage
+                       Data.ITCH.Types.UInt32 ->
+                         Data.ITCH.Types.UInt64 ->
+                           Data.ITCH.Types.UInt32 ->
+                             Data.ITCH.Types.UInt32 ->
+                               Data.ITCH.Types.UInt64 ->
+                                 Data.ITCH.Types.Byte -> Data.ITCH.Types.Price -> ITCHMessage
 orderExecutedWithPrice = OrderExecutedWithPrice
  
 trade ::
-      UInt32 ->
-        UInt32 ->
-          UInt32 -> Byte -> Byte -> Price -> UInt64 -> Byte -> ITCHMessage
+      Data.ITCH.Types.UInt32 ->
+        Data.ITCH.Types.UInt32 ->
+          Data.ITCH.Types.UInt32 ->
+            Data.ITCH.Types.Byte ->
+              Data.ITCH.Types.Byte ->
+                Data.ITCH.Types.Price ->
+                  Data.ITCH.Types.UInt64 -> Data.ITCH.Types.Byte -> ITCHMessage
 trade = Trade
  
 auctionTrade ::
-             UInt32 ->
-               UInt32 ->
-                 UInt32 -> Byte -> Byte -> Price -> UInt64 -> Byte -> ITCHMessage
+             Data.ITCH.Types.UInt32 ->
+               Data.ITCH.Types.UInt32 ->
+                 Data.ITCH.Types.UInt32 ->
+                   Data.ITCH.Types.Byte ->
+                     Data.ITCH.Types.Byte ->
+                       Data.ITCH.Types.Price ->
+                         Data.ITCH.Types.UInt64 -> Data.ITCH.Types.Byte -> ITCHMessage
 auctionTrade = AuctionTrade
  
-tradeBreak :: UInt32 -> UInt64 -> Byte -> ITCHMessage
+tradeBreak ::
+           Data.ITCH.Types.UInt32 ->
+             Data.ITCH.Types.UInt64 -> Data.ITCH.Types.Byte -> ITCHMessage
 tradeBreak = TradeBreak
  
 auctionInfo ::
-            UInt32 ->
-              UInt32 ->
-                UInt32 ->
-                  Byte -> UInt32 -> Byte -> Byte -> Price -> Byte -> ITCHMessage
+            Data.ITCH.Types.UInt32 ->
+              Data.ITCH.Types.UInt32 ->
+                Data.ITCH.Types.UInt32 ->
+                  Data.ITCH.Types.Byte ->
+                    Data.ITCH.Types.UInt32 ->
+                      Data.ITCH.Types.Byte ->
+                        Data.ITCH.Types.Byte ->
+                          Data.ITCH.Types.Price -> Data.ITCH.Types.Byte -> ITCHMessage
 auctionInfo = AuctionInfo
  
 offBookTrade ::
-             UInt32 ->
-               UInt32 ->
-                 UInt32 ->
-                   Byte ->
-                     Byte ->
-                       Price ->
-                         UInt64 ->
-                           Alpha ->
-                             Time -> Date -> Alpha -> Price -> Alpha -> BitField -> ITCHMessage
+             Data.ITCH.Types.UInt32 ->
+               Data.ITCH.Types.UInt32 ->
+                 Data.ITCH.Types.UInt32 ->
+                   Data.ITCH.Types.Byte ->
+                     Data.ITCH.Types.Byte ->
+                       Data.ITCH.Types.Price ->
+                         Data.ITCH.Types.UInt64 ->
+                           Data.ITCH.Types.Alpha ->
+                             Data.ITCH.Types.Time ->
+                               Data.ITCH.Types.Date ->
+                                 Data.ITCH.Types.Alpha ->
+                                   Data.ITCH.Types.Price ->
+                                     Data.ITCH.Types.Alpha ->
+                                       Data.ITCH.Types.BitField -> ITCHMessage
 offBookTrade = OffBookTrade
  
 statistics ::
-           UInt32 ->
-             UInt32 ->
-               Byte -> Byte -> Alpha -> Price -> Alpha -> BitField -> ITCHMessage
+           Data.ITCH.Types.UInt32 ->
+             Data.ITCH.Types.UInt32 ->
+               Data.ITCH.Types.Byte ->
+                 Data.ITCH.Types.Byte ->
+                   Data.ITCH.Types.Alpha ->
+                     Data.ITCH.Types.Price ->
+                       Data.ITCH.Types.Alpha -> Data.ITCH.Types.BitField -> ITCHMessage
 statistics = Statistics
  
 arbitraryAddOrder :: Gen ITCHMessage
@@ -892,173 +1188,3 @@ arbitraryStatistics
             arbitrary)
          arbitrary)
       arbitrary
- 
-instance Arbitrary ITCHMessage where
-        arbitrary
-          = oneof
-              [ arbitraryAddOrder,  arbitraryAddAttributedOrder,
-                arbitraryOrderDeleted,  arbitraryOrderModified,
-                arbitraryOrderBookClear,  arbitraryTime,  arbitraryLoginRequest,
-                arbitraryReplayRequest,  arbitrarySnapshotRequest,
-                arbitraryLogoutRequest,  arbitraryLoginResponse,
-                arbitraryReplayResponse,  arbitrarySnapshotResponse,
-                arbitrarySnapshotComplete,  arbitrarySystemEvent,
-                arbitrarySymbolDirectory,  arbitrarySymbolStatus,
-                arbitraryOrderExecuted,  arbitraryOrderExecutedWithPrice,
-                arbitraryTrade,  arbitraryAuctionTrade,  arbitraryTradeBreak,
-                arbitraryAuctionInfo,  arbitraryOffBookTrade,
-                arbitraryStatistics]
- 
-data ITCHMessage = AddOrder{_addOrderNanosecond ::
-                            {-# UNPACK #-} !UInt32,
-                            _addOrderOrderID :: {-# UNPACK #-} !UInt64,
-                            _addOrderSide :: {-# UNPACK #-} !Byte,
-                            _addOrderQuantity :: {-# UNPACK #-} !UInt32,
-                            _addOrderLSEInstrumentID :: {-# UNPACK #-} !UInt32,
-                            _addOrderReserved1 :: {-# UNPACK #-} !Byte,
-                            _addOrderReserved2 :: {-# UNPACK #-} !Byte,
-                            _addOrderPrice :: {-# UNPACK #-} !Price,
-                            _addOrderFlags :: {-# UNPACK #-} !BitField}
-                 | AddAttributedOrder{_addAttributedOrderNanosecond ::
-                                      {-# UNPACK #-} !UInt32,
-                                      _addAttributedOrderOrderID :: {-# UNPACK #-} !UInt64,
-                                      _addAttributedOrderSide :: {-# UNPACK #-} !Byte,
-                                      _addAttributedOrderQuantity :: {-# UNPACK #-} !UInt32,
-                                      _addAttributedOrderLSEInstrumentID :: {-# UNPACK #-} !UInt32,
-                                      _addAttributedOrderReserved1 :: {-# UNPACK #-} !Byte,
-                                      _addAttributedOrderReserved2 :: {-# UNPACK #-} !Byte,
-                                      _addAttributedOrderPrice :: {-# UNPACK #-} !Price,
-                                      _addAttributedOrderAttribution :: {-# UNPACK #-} !Alpha,
-                                      _addAttributedOrderFlags :: {-# UNPACK #-} !BitField}
-                 | OrderDeleted{_orderDeletedNanosecond :: {-# UNPACK #-} !UInt32,
-                                _orderDeletedOrderID :: {-# UNPACK #-} !UInt64,
-                                _orderDeletedFlags :: {-# UNPACK #-} !BitField}
-                 | OrderModified{_orderModifiedNanosecond :: {-# UNPACK #-} !UInt32,
-                                 _orderModifiedOrderID :: {-# UNPACK #-} !UInt64,
-                                 _orderModifiedNewQuantity :: {-# UNPACK #-} !UInt32,
-                                 _orderModifiedNewPrice :: {-# UNPACK #-} !Price,
-                                 _orderModifiedFlags :: {-# UNPACK #-} !BitField}
-                 | OrderBookClear{_orderBookClearNanosecond ::
-                                  {-# UNPACK #-} !UInt32,
-                                  _orderBookClearLSEInstrumentID :: {-# UNPACK #-} !UInt32,
-                                  _orderBookClearReserved1 :: {-# UNPACK #-} !Byte,
-                                  _orderBookClearReserved2 :: {-# UNPACK #-} !Byte,
-                                  _orderBookClearFlags :: {-# UNPACK #-} !BitField}
-                 | Time{_timeSeconds :: {-# UNPACK #-} !UInt32}
-                 | LoginRequest{_loginRequestUsername :: {-# UNPACK #-} !Alpha,
-                                _loginRequestPassword :: {-# UNPACK #-} !Alpha}
-                 | ReplayRequest{_replayRequestMarketDataGroup ::
-                                 {-# UNPACK #-} !Byte,
-                                 _replayRequestFirstMessage :: {-# UNPACK #-} !UInt32,
-                                 _replayRequestCount :: {-# UNPACK #-} !UInt8}
-                 | SnapshotRequest{_snapshotRequestSequenceNumber ::
-                                   {-# UNPACK #-} !UInt32,
-                                   _snapshotRequestSegment :: {-# UNPACK #-} !Alpha,
-                                   _snapshotRequestLSEInstrumentID :: {-# UNPACK #-} !UInt32}
-                 | LogoutRequest{}
-                 | LoginResponse{_loginResponseStatus :: {-# UNPACK #-} !Byte}
-                 | ReplayResponse{_replayResponseMarketDataGroup ::
-                                  {-# UNPACK #-} !Byte,
-                                  _replayResponseFirstMessage :: {-# UNPACK #-} !UInt32,
-                                  _replayResponseCount :: {-# UNPACK #-} !UInt8,
-                                  _replayResponseStatus :: {-# UNPACK #-} !Byte}
-                 | SnapshotResponse{_snapshotResponseSequenceNumber ::
-                                    {-# UNPACK #-} !UInt32,
-                                    _snapshotResponseOrderCount :: {-# UNPACK #-} !UInt32,
-                                    _snapshotResponseStatus :: {-# UNPACK #-} !Byte}
-                 | SnapshotComplete{_snapshotCompleteSequenceNumber ::
-                                    {-# UNPACK #-} !UInt32,
-                                    _snapshotCompleteSegment :: {-# UNPACK #-} !Alpha,
-                                    _snapshotCompleteLSEInstrumentID :: {-# UNPACK #-} !UInt32,
-                                    _snapshotCompleteFlags :: {-# UNPACK #-} !BitField}
-                 | SystemEvent{_systemEventNanosecond :: {-# UNPACK #-} !UInt32,
-                               _systemEventEventCode :: {-# UNPACK #-} !Byte}
-                 | SymbolDirectory{_symbolDirectoryNanosecond ::
-                                   {-# UNPACK #-} !UInt32,
-                                   _symbolDirectoryLSEInstrumentID :: {-# UNPACK #-} !UInt32,
-                                   _symbolDirectoryReserved1 :: {-# UNPACK #-} !Byte,
-                                   _symbolDirectoryReserved2 :: {-# UNPACK #-} !Byte,
-                                   _symbolDirectorySymbolStatus :: {-# UNPACK #-} !Alpha,
-                                   _symbolDirectoryISIN :: {-# UNPACK #-} !Alpha,
-                                   _symbolDirectorySEDOL :: {-# UNPACK #-} !Alpha,
-                                   _symbolDirectorySegment :: {-# UNPACK #-} !Alpha,
-                                   _symbolDirectoryUnderlying :: {-# UNPACK #-} !Alpha,
-                                   _symbolDirectoryCurrency :: {-# UNPACK #-} !Alpha,
-                                   _symbolDirectoryTargetBook :: {-# UNPACK #-} !Byte,
-                                   _symbolDirectorySecurityExchange :: {-# UNPACK #-} !Alpha,
-                                   _symbolDirectoryPreviousClosePrice :: {-# UNPACK #-} !Price}
-                 | SymbolStatus{_symbolStatusNanosecond :: {-# UNPACK #-} !UInt32,
-                                _symbolStatusLSEInstrumentID :: {-# UNPACK #-} !UInt32,
-                                _symbolStatusReserved1 :: {-# UNPACK #-} !Byte,
-                                _symbolStatusReserved2 :: {-# UNPACK #-} !Byte,
-                                _symbolStatusTradingStatus :: {-# UNPACK #-} !Byte,
-                                _symbolStatusFlags :: {-# UNPACK #-} !BitField,
-                                _symbolStatusHaltReason :: {-# UNPACK #-} !Alpha,
-                                _symbolStatusSessionChangeReason :: {-# UNPACK #-} !UInt8,
-                                _symbolStatusNewEndTime :: {-# UNPACK #-} !Time,
-                                _symbolStatusBookType :: {-# UNPACK #-} !UInt8}
-                 | OrderExecuted{_orderExecutedNanosecond :: {-# UNPACK #-} !UInt32,
-                                 _orderExecutedOrderID :: {-# UNPACK #-} !UInt64,
-                                 _orderExecutedExecutedQuantity :: {-# UNPACK #-} !UInt32,
-                                 _orderExecutedTradeID :: {-# UNPACK #-} !UInt64}
-                 | OrderExecutedWithPrice{_orderExecutedWithPriceNanosecond ::
-                                          {-# UNPACK #-} !UInt32,
-                                          _orderExecutedWithPriceOrderID :: {-# UNPACK #-} !UInt64,
-                                          _orderExecutedWithPriceExecutedQuantity ::
-                                          {-# UNPACK #-} !UInt32,
-                                          _orderExecutedWithPriceDisplayQuantity ::
-                                          {-# UNPACK #-} !UInt32,
-                                          _orderExecutedWithPriceTradeID :: {-# UNPACK #-} !UInt64,
-                                          _orderExecutedWithPricePrintable :: {-# UNPACK #-} !Byte,
-                                          _orderExecutedWithPricePrice :: {-# UNPACK #-} !Price}
-                 | Trade{_tradeNanosecond :: {-# UNPACK #-} !UInt32,
-                         _tradeExecutedQuantity :: {-# UNPACK #-} !UInt32,
-                         _tradeLSEInstrumentID :: {-# UNPACK #-} !UInt32,
-                         _tradeReserved1 :: {-# UNPACK #-} !Byte,
-                         _tradeReserved2 :: {-# UNPACK #-} !Byte,
-                         _tradePrice :: {-# UNPACK #-} !Price,
-                         _tradeTradeID :: {-# UNPACK #-} !UInt64,
-                         _tradeSideOfAggressor :: {-# UNPACK #-} !Byte}
-                 | AuctionTrade{_auctionTradeNanosecond :: {-# UNPACK #-} !UInt32,
-                                _auctionTradeQuantity :: {-# UNPACK #-} !UInt32,
-                                _auctionTradeLSEInstrumentID :: {-# UNPACK #-} !UInt32,
-                                _auctionTradeReserved1 :: {-# UNPACK #-} !Byte,
-                                _auctionTradeReserved2 :: {-# UNPACK #-} !Byte,
-                                _auctionTradePrice :: {-# UNPACK #-} !Price,
-                                _auctionTradeTradeID :: {-# UNPACK #-} !UInt64,
-                                _auctionTradeAuctionType :: {-# UNPACK #-} !Byte}
-                 | TradeBreak{_tradeBreakNanosecond :: {-# UNPACK #-} !UInt32,
-                              _tradeBreakTradeID :: {-# UNPACK #-} !UInt64,
-                              _tradeBreakTradeType :: {-# UNPACK #-} !Byte}
-                 | AuctionInfo{_auctionInfoNanosecond :: {-# UNPACK #-} !UInt32,
-                               _auctionInfoPairedQuantity :: {-# UNPACK #-} !UInt32,
-                               _auctionInfoImbalanceQuantity :: {-# UNPACK #-} !UInt32,
-                               _auctionInfoImbalanceDirection :: {-# UNPACK #-} !Byte,
-                               _auctionInfoLSEInstrumentID :: {-# UNPACK #-} !UInt32,
-                               _auctionInfoReserved1 :: {-# UNPACK #-} !Byte,
-                               _auctionInfoReserved2 :: {-# UNPACK #-} !Byte,
-                               _auctionInfoPrice :: {-# UNPACK #-} !Price,
-                               _auctionInfoAuctionType :: {-# UNPACK #-} !Byte}
-                 | OffBookTrade{_offBookTradeNanosecond :: {-# UNPACK #-} !UInt32,
-                                _offBookTradeExecutedQuantity :: {-# UNPACK #-} !UInt32,
-                                _offBookTradeLSEInstrumentID :: {-# UNPACK #-} !UInt32,
-                                _offBookTradeReserved1 :: {-# UNPACK #-} !Byte,
-                                _offBookTradeReserved2 :: {-# UNPACK #-} !Byte,
-                                _offBookTradePrice :: {-# UNPACK #-} !Price,
-                                _offBookTradeTradeID :: {-# UNPACK #-} !UInt64,
-                                _offBookTradeOffBookTradeType :: {-# UNPACK #-} !Alpha,
-                                _offBookTradeTradeTime :: {-# UNPACK #-} !Time,
-                                _offBookTradeTradeDate :: {-# UNPACK #-} !Date,
-                                _offBookTradeTradedCurrency :: {-# UNPACK #-} !Alpha,
-                                _offBookTradeOriginalPrice :: {-# UNPACK #-} !Price,
-                                _offBookTradeExecutionVenue :: {-# UNPACK #-} !Alpha,
-                                _offBookTradeFlags :: {-# UNPACK #-} !BitField}
-                 | Statistics{_statisticsNanosecond :: {-# UNPACK #-} !UInt32,
-                              _statisticsLSEInstrumentID :: {-# UNPACK #-} !UInt32,
-                              _statisticsReserved1 :: {-# UNPACK #-} !Byte,
-                              _statisticsReserved2 :: {-# UNPACK #-} !Byte,
-                              _statisticsLSEGStatisticsType :: {-# UNPACK #-} !Alpha,
-                              _statisticsPrice :: {-# UNPACK #-} !Price,
-                              _statisticsOpenClosePriceIndicator :: {-# UNPACK #-} !Alpha,
-                              _statisticsFlags :: {-# UNPACK #-} !BitField}
-                 deriving (Show, Eq)
