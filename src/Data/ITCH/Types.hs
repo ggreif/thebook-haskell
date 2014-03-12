@@ -27,11 +27,11 @@ module Data.ITCH.Types (
   , getMessageType, putMessageType
   ) where
 
-import           Control.Applicative       (pure, (*>), (<$>), (<*>))
+import           Control.Applicative       (pure, (<*), (*>), (<$>), (<*>))
 import           Control.Monad             (fail)
 import           Data.Binary               (Binary, get, put)
 import           Data.Binary.Get           (Get, getByteString, getWord16le,
-                                            getWord32le, getWord64le)
+                                            getWord32le, getWord64le, skip)
 import           Data.Binary.Put           (Put, putByteString, putWord16le,
                                             putWord32le, putWord64le)
 import           Data.Bits                 (Bits, bit, shiftR, testBit, (.|.))
@@ -43,7 +43,8 @@ import qualified Data.ByteString.Unsafe    as BSU
 import           Data.Decimal              (Decimal, realFracToDecimal)
 import qualified Data.TheBook.MarketData   as Types
 import           Data.Time.Calendar        (Day, fromGregorian, toGregorian)
-import           Data.Time.LocalTime       (TimeOfDay, dayFractionToTimeOfDay)
+import           Data.Time.Clock           (secondsToDiffTime)
+import           Data.Time.LocalTime       (TimeOfDay, makeTimeOfDayValid, timeToTimeOfDay)
 import           Data.Time.Format          (formatTime)
 import           Data.Word
 import           Debug.Trace               (trace, traceShow)
@@ -75,6 +76,8 @@ type BitField = Word8
 -- | Byte      | 1        | A single byte used to hold one ASCII character.
 type Byte = Word8
 
+tracee a = trace a a
+
 -- | Date      | 8        | Date specified in the YYYYMMDD format using ASCII characters.
 newtype Date = Date Day
   deriving (Eq, Show)
@@ -85,13 +88,18 @@ instance Binary Date where
   put (Date d) = putByteString . BS8.pack $ formatTime defaultTimeLocale "%0Y%m%d" d
 
 -- | Time      | 8        | Time specified in the HH:MM:SS format using ASCII characters.
+-- The 'Arbitrary' as well as 'Binary' instances are very specifically implemented to pass
+-- tests. There is an inherent loss of information in this encoding, because we only
+-- encode time with second precision, whereas 'TimeOfDay' has picosecond precision.
+-- Therefore, get and put do not satisfy the identity law, unless we choose the input
+-- 'TimeOfDay' very carefully.
 newtype Time = Time TimeOfDay
   deriving (Eq, Show)
 instance Arbitrary Time where
-  arbitrary = Time . dayFractionToTimeOfDay <$> suchThat arbitrary (\d -> d >= 0 || d <= 1)
+  arbitrary = Time . timeToTimeOfDay . secondsToDiffTime <$> suchThat arbitrary (\d -> d >= 0 && d <= 60 * 60 * 24)
 instance Binary Time where
-  get = undefined -- Time <$> (fromGregorian <$> readNum 4 <*> readNum 2 <*> readNum 2)
-  put (Time t) = undefined
+  get = Time <$> (maybeToFail =<< (makeTimeOfDayValid <$> readNum 2 <* skip 1 <*> readNum 2 <* skip 1 <*> (fromInteger <$> readNum 2)))
+  put (Time t) = putByteString . BS8.pack $ formatTime defaultTimeLocale "%H:%M:%S" t
 
 -- | Price     | 8        | Signed Little-Endian encoded eight byte integer field with eight implied decimal places.
 newtype Price = Price Decimal
@@ -180,6 +188,10 @@ writeNum :: (Integral a) => a -> Put
 writeNum i = case packDecimal i of
               Just a -> putByteString a
               _      -> fail "Cannot encode decimal"
+
+maybeToFail :: Maybe a -> Get a
+maybeToFail (Just a) = pure a
+maybeToFail (Nothing) = fail "Something didn't work"
 
 -- Copied from 'Data.ByteString.Lex.Numerical',
 -- because I can't get it to install on Haskell Center.
