@@ -46,6 +46,7 @@ library
                      , lens
                      , QuickCheck == 2.6.*
                      , Decimal
+                     , old-locale
   hs-source-dirs:      src
   ghc-options:         -Wall -fwarn-incomplete-patterns
 

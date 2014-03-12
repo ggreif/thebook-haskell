@@ -2,6 +2,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiWayIf                 #-}
 {-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.ITCH
@@ -40,7 +41,8 @@ import qualified Data.ByteString           as BS
 import qualified Data.ByteString.Char8     as BS8 (ByteString, pack)
 import qualified Data.ByteString.Internal  as BSI
 import qualified Data.ByteString.Unsafe    as BSU
-import           Data.Decimal              (Decimal, realFracToDecimal)
+import           Data.Decimal (DecimalRaw(..), realFracToDecimal)
+import Data.Typeable (Typeable)
 import qualified Data.TheBook.MarketData   as Types
 import           Data.Time.Calendar        (Day, fromGregorian, toGregorian)
 import           Data.Time.Clock           (secondsToDiffTime)
@@ -102,13 +104,13 @@ instance Binary Time where
   put (Time t) = putByteString . BS8.pack $ formatTime defaultTimeLocale "%H:%M:%S" t
 
 -- | Price     | 8        | Signed Little-Endian encoded eight byte integer field with eight implied decimal places.
-newtype Price = Price Decimal
+newtype Price = Price (DecimalRaw Word64)
   deriving (Eq, Show)
 instance Arbitrary Price where
-  arbitrary = Price <$> (realFracToDecimal <$> arbitrary <*> (arbitrary :: Gen Double))
+  arbitrary = Price . realFracToDecimal 8 <$> (arbitrary :: Gen Double)
 instance Binary Price where
-  get = undefined
-  put (Price p) = undefined
+  get = Price . Decimal 8 <$> getWord64le
+  put (Price (Decimal _ p)) = putWord64le p
 
 -- | UInt8     | 1        | 8 bit unsigned integer.
 type UInt8 = Word8
