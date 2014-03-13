@@ -4,6 +4,7 @@ module Main where
 import qualified Data.Text as T
 import Data.Text (Text)
 import Data.String
+import Data.List (reverse)
 import Data.Word (Word8)
 import Control.Applicative ((<$>), (<*>), (<*), (<|>), pure)
 import Control.Monad (void, (=<<), forever)
@@ -170,10 +171,14 @@ getFunctionName (Message msg _ _) = T.unpack $ "get" <> fixName msg
 putFunctionName :: Message -> String
 putFunctionName (Message msg _ _) = T.unpack $ "put" <> fixName msg
 
+getFunc :: Field -> Hs.Exp
+getFunc (Field _ (Alpha length)) = Hs.App (Hs.Var . Hs.Qual dataITCHTypes . Hs.name $ "getAlpha") (Hs.Lit . Hs.Int . fromIntegral $ length)
+getFunc _ = Hs.Var . Hs.UnQual . Hs.name $ "get"
+
 getApp :: Message -> [Field] -> Hs.Exp
 getApp _ []     = error "Sorry"
-getApp msg [Field _ t]  = Hs.App (Hs.App (Hs.Var fM) (Hs.Con . Hs.UnQual . messageConstr $ msg)) (Hs.Var . Hs.UnQual . Hs.name $ "get")
-getApp msg (f:fs) = Hs.App (Hs.App (Hs.Var fS) (getApp msg fs)) (Hs.Var . Hs.UnQual . Hs.name $ "get")
+getApp msg [f@(Field _ t)]  = Hs.App (Hs.App (Hs.Var fM) (Hs.Con . Hs.UnQual . messageConstr $ msg)) (getFunc f)
+getApp msg (f:fs) = Hs.App (Hs.App (Hs.Var fS) (getApp msg fs)) (getFunc f)
 
 generateGetFunction :: Message -> [Hs.Decl]
 generateGetFunction msg@(Message name _ fields) = decl where
@@ -183,18 +188,22 @@ generateGetFunction msg@(Message name _ fields) = decl where
   body = Hs.FunBind [Hs.Match srcLoc name' [] Nothing arbitraryRhs (Hs.BDecls [])]
   arbitraryRhs = Hs.UnGuardedRhs $ if null fields
                   then Hs.App (Hs.Var . Hs.UnQual . Hs.name $ "pure") (Hs.Con . Hs.UnQual . messageConstr $ msg)
-                  else getApp msg fields
+                  else getApp msg (reverse fields)
+
+putFunc :: Field -> Message -> Hs.Exp
+putFunc f@(Field _ (Alpha length)) msg = Hs.App (Hs.App (Hs.Var . Hs.Qual dataITCHTypes . Hs.name $ "putAlpha") (Hs.Lit . Hs.Int . fromIntegral $ length)) (Hs.App (Hs.Var . Hs.UnQual . Hs.name $ fieldName msg f) (Hs.Var . Hs.UnQual . Hs.name $ "msg"))
+putFunc f msg = Hs.App (Hs.Var . Hs.UnQual . Hs.name $ "put") (Hs.App (Hs.Var . Hs.UnQual . Hs.name $ fieldName msg f) (Hs.Var . Hs.UnQual . Hs.name $ "msg"))
 
 putApp :: Message -> [Field] -> Hs.Exp
 putApp _ []     = error "Sorry"
-putApp msg [f@(Field n t)]  = Hs.App (Hs.Var . Hs.UnQual . Hs.name $ "put") (Hs.App (Hs.Var . Hs.UnQual . Hs.name $ fieldName msg f) (Hs.Var . Hs.UnQual . Hs.name $ "msg"))
-putApp msg (f:fs) = Hs.App (Hs.App (Hs.Var fSeq) (putApp msg fs)) (Hs.App (Hs.Var . Hs.UnQual . Hs.name $ "put") (Hs.App (Hs.Var . Hs.UnQual . Hs.name $ fieldName msg f) (Hs.Var . Hs.UnQual . Hs.name $ "msg")))
+putApp msg [f@(Field n t)]  = putFunc f msg
+putApp msg (f:fs) = Hs.App (Hs.App (Hs.Var fSeq) (putApp msg fs)) (putFunc f msg)
 
 generatePutFunction :: Message -> Hs.Exp
 generatePutFunction msg@(Message name _ fields)
   = if null fields
       then Hs.App (Hs.Var . Hs.UnQual . Hs.name $ "return") (Hs.Tuple Hs.Boxed [])
-      else putApp msg fields
+      else putApp msg (reverse fields)
 
  -- | Generates a 'Data.Binary' instance for the messages.
 generateBinaryInstance :: [Message] -> Hs.Decl
@@ -221,10 +230,14 @@ generateBinaryInstance msgs = decl where
 arbitraryFunctionName :: Message -> String
 arbitraryFunctionName (Message msg _ _) = T.unpack $ "arbitrary" <> fixName msg
 
+arbitraryFunc :: Field -> Hs.Exp
+arbitraryFunc (Field _ (Alpha length)) = Hs.App (Hs.Var . Hs.Qual dataITCHTypes . Hs.name $ "arbitraryAlpha") (Hs.Lit . Hs.Int . fromIntegral $ length)
+arbitraryFunc _ = (Hs.Var . Hs.UnQual . Hs.name $ "arbitrary")
+
 arbitraryApp :: Message -> [Field] -> Hs.Exp
 arbitraryApp _ []     = error "Sorry"
-arbitraryApp msg [Field _ t]  = Hs.App (Hs.App (Hs.Var fM) (Hs.Con . Hs.UnQual . messageConstr $ msg)) (Hs.Var . Hs.UnQual . Hs.name $ "arbitrary")
-arbitraryApp msg (f:fs) = Hs.App (Hs.App (Hs.Var fS) (arbitraryApp msg fs)) (Hs.Var . Hs.UnQual . Hs.name $ "arbitrary")
+arbitraryApp msg [f@(Field _ t)]  = Hs.App (Hs.App (Hs.Var fM) (Hs.Con . Hs.UnQual . messageConstr $ msg)) (arbitraryFunc f)
+arbitraryApp msg (f:fs) = Hs.App (Hs.App (Hs.Var fS) (arbitraryApp msg fs)) (arbitraryFunc f)
 
 generateArbitraryFunction :: Message -> [Hs.Decl]
 generateArbitraryFunction msg@(Message name _ fields) = decl where
@@ -234,7 +247,7 @@ generateArbitraryFunction msg@(Message name _ fields) = decl where
   body = Hs.FunBind [Hs.Match srcLoc name' [] Nothing arbitraryRhs (Hs.BDecls [])]
   arbitraryRhs = Hs.UnGuardedRhs $ if null fields
                   then Hs.App (Hs.Var . Hs.UnQual . Hs.name $ "pure") (Hs.Con . Hs.UnQual . messageConstr $ msg)
-                  else arbitraryApp msg fields
+                  else arbitraryApp msg (reverse fields)
 
 -- | Generates 'Test.QuickCheck.Arbitrary' instance for the messages.
 generateArbitraryInstance :: [Message] -> Hs.Decl

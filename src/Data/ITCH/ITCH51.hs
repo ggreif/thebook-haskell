@@ -33,7 +33,7 @@ getAddAttributedOrder
                   get)
                get)
             get)
-         get)
+         (Data.ITCH.Types.getAlpha 11))
       get
  
 getOrderDeleted :: Get ITCHMessage
@@ -55,14 +55,18 @@ getTime :: Get ITCHMessage
 getTime = (<$>) Time get
  
 getLoginRequest :: Get ITCHMessage
-getLoginRequest = (<*>) ((<$>) LoginRequest get) get
+getLoginRequest
+  = (<*>) ((<$>) LoginRequest (Data.ITCH.Types.getAlpha 6))
+      (Data.ITCH.Types.getAlpha 10)
  
 getReplayRequest :: Get ITCHMessage
 getReplayRequest = (<*>) ((<*>) ((<$>) ReplayRequest get) get) get
  
 getSnapshotRequest :: Get ITCHMessage
 getSnapshotRequest
-  = (<*>) ((<*>) ((<$>) SnapshotRequest get) get) get
+  = (<*>)
+      ((<*>) ((<$>) SnapshotRequest get) (Data.ITCH.Types.getAlpha 6))
+      get
  
 getLogoutRequest :: Get ITCHMessage
 getLogoutRequest = pure LogoutRequest
@@ -80,7 +84,11 @@ getSnapshotResponse
  
 getSnapshotComplete :: Get ITCHMessage
 getSnapshotComplete
-  = (<*>) ((<*>) ((<*>) ((<$>) SnapshotComplete get) get) get) get
+  = (<*>)
+      ((<*>)
+         ((<*>) ((<$>) SnapshotComplete get) (Data.ITCH.Types.getAlpha 6))
+         get)
+      get
  
 getSystemEvent :: Get ITCHMessage
 getSystemEvent = (<*>) ((<$>) SystemEvent get) get
@@ -97,14 +105,14 @@ getSymbolDirectory
                         ((<*>)
                            ((<*>)
                               ((<*>) ((<*>) ((<*>) ((<$>) SymbolDirectory get) get) get) get)
-                              get)
-                           get)
-                        get)
-                     get)
-                  get)
-               get)
+                              (Data.ITCH.Types.getAlpha 1))
+                           (Data.ITCH.Types.getAlpha 12))
+                        (Data.ITCH.Types.getAlpha 12))
+                     (Data.ITCH.Types.getAlpha 6))
+                  (Data.ITCH.Types.getAlpha 6))
+               (Data.ITCH.Types.getAlpha 3))
             get)
-         get)
+         (Data.ITCH.Types.getAlpha 4))
       get
  
 getSymbolStatus :: Get ITCHMessage
@@ -117,7 +125,7 @@ getSymbolStatus
                   ((<*>) ((<*>) ((<*>) ((<*>) ((<$>) SymbolStatus get) get) get) get)
                      get)
                   get)
-               get)
+               (Data.ITCH.Types.getAlpha 4))
             get)
          get)
       get
@@ -189,12 +197,12 @@ getOffBookTrade
                                  get)
                               get)
                            get)
-                        get)
+                        (Data.ITCH.Types.getAlpha 4))
                      get)
                   get)
-               get)
+               (Data.ITCH.Types.getAlpha 4))
             get)
-         get)
+         (Data.ITCH.Types.getAlpha 5))
       get
  
 getStatistics :: Get ITCHMessage
@@ -203,9 +211,9 @@ getStatistics
       ((<*>)
          ((<*>)
             ((<*>) ((<*>) ((<*>) ((<*>) ((<$>) Statistics get) get) get) get)
-               get)
+               (Data.ITCH.Types.getAlpha 1))
             get)
-         get)
+         (Data.ITCH.Types.getAlpha 1))
       get
  
 instance Binary ITCHMessage where
@@ -246,14 +254,16 @@ instance Binary ITCHMessage where
                        ((*>)
                           ((*>)
                              ((*>)
-                                ((*>) ((*>) (put (_addOrderFlags msg)) (put (_addOrderPrice msg)))
-                                   (put (_addOrderReserved2 msg)))
-                                (put (_addOrderReserved1 msg)))
+                                ((*>)
+                                   ((*>) (put (_addOrderNanosecond msg))
+                                      (put (_addOrderOrderID msg)))
+                                   (put (_addOrderSide msg)))
+                                (put (_addOrderQuantity msg)))
                              (put (_addOrderLSEInstrumentID msg)))
-                          (put (_addOrderQuantity msg)))
-                       (put (_addOrderSide msg)))
-                    (put (_addOrderOrderID msg)))
-                 (put (_addOrderNanosecond msg)))
+                          (put (_addOrderReserved1 msg)))
+                       (put (_addOrderReserved2 msg)))
+                    (put (_addOrderPrice msg)))
+                 (put (_addOrderFlags msg)))
         put msg@AddAttributedOrder{}
           = (*>) (Data.ITCH.Types.putMessageType 70)
               ((*>)
@@ -264,60 +274,60 @@ instance Binary ITCHMessage where
                              ((*>)
                                 ((*>)
                                    ((*>)
-                                      ((*>) (put (_addAttributedOrderFlags msg))
-                                         (put (_addAttributedOrderAttribution msg)))
-                                      (put (_addAttributedOrderPrice msg)))
-                                   (put (_addAttributedOrderReserved2 msg)))
-                                (put (_addAttributedOrderReserved1 msg)))
-                             (put (_addAttributedOrderLSEInstrumentID msg)))
-                          (put (_addAttributedOrderQuantity msg)))
-                       (put (_addAttributedOrderSide msg)))
-                    (put (_addAttributedOrderOrderID msg)))
-                 (put (_addAttributedOrderNanosecond msg)))
+                                      ((*>) (put (_addAttributedOrderNanosecond msg))
+                                         (put (_addAttributedOrderOrderID msg)))
+                                      (put (_addAttributedOrderSide msg)))
+                                   (put (_addAttributedOrderQuantity msg)))
+                                (put (_addAttributedOrderLSEInstrumentID msg)))
+                             (put (_addAttributedOrderReserved1 msg)))
+                          (put (_addAttributedOrderReserved2 msg)))
+                       (put (_addAttributedOrderPrice msg)))
+                    (Data.ITCH.Types.putAlpha 11 (_addAttributedOrderAttribution msg)))
+                 (put (_addAttributedOrderFlags msg)))
         put msg@OrderDeleted{}
           = (*>) (Data.ITCH.Types.putMessageType 68)
               ((*>)
-                 ((*>) (put (_orderDeletedFlags msg))
+                 ((*>) (put (_orderDeletedNanosecond msg))
                     (put (_orderDeletedOrderID msg)))
-                 (put (_orderDeletedNanosecond msg)))
+                 (put (_orderDeletedFlags msg)))
         put msg@OrderModified{}
           = (*>) (Data.ITCH.Types.putMessageType 85)
               ((*>)
                  ((*>)
                     ((*>)
-                       ((*>) (put (_orderModifiedFlags msg))
-                          (put (_orderModifiedNewPrice msg)))
+                       ((*>) (put (_orderModifiedNanosecond msg))
+                          (put (_orderModifiedOrderID msg)))
                        (put (_orderModifiedNewQuantity msg)))
-                    (put (_orderModifiedOrderID msg)))
-                 (put (_orderModifiedNanosecond msg)))
+                    (put (_orderModifiedNewPrice msg)))
+                 (put (_orderModifiedFlags msg)))
         put msg@OrderBookClear{}
           = (*>) (Data.ITCH.Types.putMessageType 121)
               ((*>)
                  ((*>)
                     ((*>)
-                       ((*>) (put (_orderBookClearFlags msg))
-                          (put (_orderBookClearReserved2 msg)))
+                       ((*>) (put (_orderBookClearNanosecond msg))
+                          (put (_orderBookClearLSEInstrumentID msg)))
                        (put (_orderBookClearReserved1 msg)))
-                    (put (_orderBookClearLSEInstrumentID msg)))
-                 (put (_orderBookClearNanosecond msg)))
+                    (put (_orderBookClearReserved2 msg)))
+                 (put (_orderBookClearFlags msg)))
         put msg@Time{}
           = (*>) (Data.ITCH.Types.putMessageType 84) (put (_timeSeconds msg))
         put msg@LoginRequest{}
           = (*>) (Data.ITCH.Types.putMessageType 1)
-              ((*>) (put (_loginRequestPassword msg))
-                 (put (_loginRequestUsername msg)))
+              ((*>) (Data.ITCH.Types.putAlpha 6 (_loginRequestUsername msg))
+                 (Data.ITCH.Types.putAlpha 10 (_loginRequestPassword msg)))
         put msg@ReplayRequest{}
           = (*>) (Data.ITCH.Types.putMessageType 3)
               ((*>)
-                 ((*>) (put (_replayRequestCount msg))
+                 ((*>) (put (_replayRequestMarketDataGroup msg))
                     (put (_replayRequestFirstMessage msg)))
-                 (put (_replayRequestMarketDataGroup msg)))
+                 (put (_replayRequestCount msg)))
         put msg@SnapshotRequest{}
           = (*>) (Data.ITCH.Types.putMessageType 129)
               ((*>)
-                 ((*>) (put (_snapshotRequestLSEInstrumentID msg))
-                    (put (_snapshotRequestSegment msg)))
-                 (put (_snapshotRequestSequenceNumber msg)))
+                 ((*>) (put (_snapshotRequestSequenceNumber msg))
+                    (Data.ITCH.Types.putAlpha 6 (_snapshotRequestSegment msg)))
+                 (put (_snapshotRequestLSEInstrumentID msg)))
         put msg@LogoutRequest{}
           = (*>) (Data.ITCH.Types.putMessageType 5) (return ())
         put msg@LoginResponse{}
@@ -327,28 +337,28 @@ instance Binary ITCHMessage where
           = (*>) (Data.ITCH.Types.putMessageType 4)
               ((*>)
                  ((*>)
-                    ((*>) (put (_replayResponseStatus msg))
-                       (put (_replayResponseCount msg)))
-                    (put (_replayResponseFirstMessage msg)))
-                 (put (_replayResponseMarketDataGroup msg)))
+                    ((*>) (put (_replayResponseMarketDataGroup msg))
+                       (put (_replayResponseFirstMessage msg)))
+                    (put (_replayResponseCount msg)))
+                 (put (_replayResponseStatus msg)))
         put msg@SnapshotResponse{}
           = (*>) (Data.ITCH.Types.putMessageType 130)
               ((*>)
-                 ((*>) (put (_snapshotResponseStatus msg))
+                 ((*>) (put (_snapshotResponseSequenceNumber msg))
                     (put (_snapshotResponseOrderCount msg)))
-                 (put (_snapshotResponseSequenceNumber msg)))
+                 (put (_snapshotResponseStatus msg)))
         put msg@SnapshotComplete{}
           = (*>) (Data.ITCH.Types.putMessageType 131)
               ((*>)
                  ((*>)
-                    ((*>) (put (_snapshotCompleteFlags msg))
-                       (put (_snapshotCompleteLSEInstrumentID msg)))
-                    (put (_snapshotCompleteSegment msg)))
-                 (put (_snapshotCompleteSequenceNumber msg)))
+                    ((*>) (put (_snapshotCompleteSequenceNumber msg))
+                       (Data.ITCH.Types.putAlpha 6 (_snapshotCompleteSegment msg)))
+                    (put (_snapshotCompleteLSEInstrumentID msg)))
+                 (put (_snapshotCompleteFlags msg)))
         put msg@SystemEvent{}
           = (*>) (Data.ITCH.Types.putMessageType 83)
-              ((*>) (put (_systemEventEventCode msg))
-                 (put (_systemEventNanosecond msg)))
+              ((*>) (put (_systemEventNanosecond msg))
+                 (put (_systemEventEventCode msg)))
         put msg@SymbolDirectory{}
           = (*>) (Data.ITCH.Types.putMessageType 82)
               ((*>)
@@ -362,19 +372,21 @@ instance Binary ITCHMessage where
                                       ((*>)
                                          ((*>)
                                             ((*>)
-                                               ((*>) (put (_symbolDirectoryPreviousClosePrice msg))
-                                                  (put (_symbolDirectorySecurityExchange msg)))
-                                               (put (_symbolDirectoryTargetBook msg)))
-                                            (put (_symbolDirectoryCurrency msg)))
-                                         (put (_symbolDirectoryUnderlying msg)))
-                                      (put (_symbolDirectorySegment msg)))
-                                   (put (_symbolDirectorySEDOL msg)))
-                                (put (_symbolDirectoryISIN msg)))
-                             (put (_symbolDirectorySymbolStatus msg)))
-                          (put (_symbolDirectoryReserved2 msg)))
-                       (put (_symbolDirectoryReserved1 msg)))
-                    (put (_symbolDirectoryLSEInstrumentID msg)))
-                 (put (_symbolDirectoryNanosecond msg)))
+                                               ((*>) (put (_symbolDirectoryNanosecond msg))
+                                                  (put (_symbolDirectoryLSEInstrumentID msg)))
+                                               (put (_symbolDirectoryReserved1 msg)))
+                                            (put (_symbolDirectoryReserved2 msg)))
+                                         (Data.ITCH.Types.putAlpha 1
+                                            (_symbolDirectorySymbolStatus msg)))
+                                      (Data.ITCH.Types.putAlpha 12 (_symbolDirectoryISIN msg)))
+                                   (Data.ITCH.Types.putAlpha 12 (_symbolDirectorySEDOL msg)))
+                                (Data.ITCH.Types.putAlpha 6 (_symbolDirectorySegment msg)))
+                             (Data.ITCH.Types.putAlpha 6 (_symbolDirectoryUnderlying msg)))
+                          (Data.ITCH.Types.putAlpha 3 (_symbolDirectoryCurrency msg)))
+                       (put (_symbolDirectoryTargetBook msg)))
+                    (Data.ITCH.Types.putAlpha 4
+                       (_symbolDirectorySecurityExchange msg)))
+                 (put (_symbolDirectoryPreviousClosePrice msg)))
         put msg@SymbolStatus{}
           = (*>) (Data.ITCH.Types.putMessageType 72)
               ((*>)
@@ -385,24 +397,24 @@ instance Binary ITCHMessage where
                              ((*>)
                                 ((*>)
                                    ((*>)
-                                      ((*>) (put (_symbolStatusBookType msg))
-                                         (put (_symbolStatusNewEndTime msg)))
-                                      (put (_symbolStatusSessionChangeReason msg)))
-                                   (put (_symbolStatusHaltReason msg)))
-                                (put (_symbolStatusFlags msg)))
-                             (put (_symbolStatusTradingStatus msg)))
-                          (put (_symbolStatusReserved2 msg)))
-                       (put (_symbolStatusReserved1 msg)))
-                    (put (_symbolStatusLSEInstrumentID msg)))
-                 (put (_symbolStatusNanosecond msg)))
+                                      ((*>) (put (_symbolStatusNanosecond msg))
+                                         (put (_symbolStatusLSEInstrumentID msg)))
+                                      (put (_symbolStatusReserved1 msg)))
+                                   (put (_symbolStatusReserved2 msg)))
+                                (put (_symbolStatusTradingStatus msg)))
+                             (put (_symbolStatusFlags msg)))
+                          (Data.ITCH.Types.putAlpha 4 (_symbolStatusHaltReason msg)))
+                       (put (_symbolStatusSessionChangeReason msg)))
+                    (put (_symbolStatusNewEndTime msg)))
+                 (put (_symbolStatusBookType msg)))
         put msg@OrderExecuted{}
           = (*>) (Data.ITCH.Types.putMessageType 69)
               ((*>)
                  ((*>)
-                    ((*>) (put (_orderExecutedTradeID msg))
-                       (put (_orderExecutedExecutedQuantity msg)))
-                    (put (_orderExecutedOrderID msg)))
-                 (put (_orderExecutedNanosecond msg)))
+                    ((*>) (put (_orderExecutedNanosecond msg))
+                       (put (_orderExecutedOrderID msg)))
+                    (put (_orderExecutedExecutedQuantity msg)))
+                 (put (_orderExecutedTradeID msg)))
         put msg@OrderExecutedWithPrice{}
           = (*>) (Data.ITCH.Types.putMessageType 67)
               ((*>)
@@ -410,13 +422,13 @@ instance Binary ITCHMessage where
                     ((*>)
                        ((*>)
                           ((*>)
-                             ((*>) (put (_orderExecutedWithPricePrice msg))
-                                (put (_orderExecutedWithPricePrintable msg)))
-                             (put (_orderExecutedWithPriceTradeID msg)))
+                             ((*>) (put (_orderExecutedWithPriceNanosecond msg))
+                                (put (_orderExecutedWithPriceOrderID msg)))
+                             (put (_orderExecutedWithPriceExecutedQuantity msg)))
                           (put (_orderExecutedWithPriceDisplayQuantity msg)))
-                       (put (_orderExecutedWithPriceExecutedQuantity msg)))
-                    (put (_orderExecutedWithPriceOrderID msg)))
-                 (put (_orderExecutedWithPriceNanosecond msg)))
+                       (put (_orderExecutedWithPriceTradeID msg)))
+                    (put (_orderExecutedWithPricePrintable msg)))
+                 (put (_orderExecutedWithPricePrice msg)))
         put msg@Trade{}
           = (*>) (Data.ITCH.Types.putMessageType 80)
               ((*>)
@@ -425,13 +437,14 @@ instance Binary ITCHMessage where
                        ((*>)
                           ((*>)
                              ((*>)
-                                ((*>) (put (_tradeSideOfAggressor msg)) (put (_tradeTradeID msg)))
-                                (put (_tradePrice msg)))
-                             (put (_tradeReserved2 msg)))
-                          (put (_tradeReserved1 msg)))
-                       (put (_tradeLSEInstrumentID msg)))
-                    (put (_tradeExecutedQuantity msg)))
-                 (put (_tradeNanosecond msg)))
+                                ((*>) (put (_tradeNanosecond msg))
+                                   (put (_tradeExecutedQuantity msg)))
+                                (put (_tradeLSEInstrumentID msg)))
+                             (put (_tradeReserved1 msg)))
+                          (put (_tradeReserved2 msg)))
+                       (put (_tradePrice msg)))
+                    (put (_tradeTradeID msg)))
+                 (put (_tradeSideOfAggressor msg)))
         put msg@AuctionTrade{}
           = (*>) (Data.ITCH.Types.putMessageType 81)
               ((*>)
@@ -440,20 +453,20 @@ instance Binary ITCHMessage where
                        ((*>)
                           ((*>)
                              ((*>)
-                                ((*>) (put (_auctionTradeAuctionType msg))
-                                   (put (_auctionTradeTradeID msg)))
-                                (put (_auctionTradePrice msg)))
-                             (put (_auctionTradeReserved2 msg)))
-                          (put (_auctionTradeReserved1 msg)))
-                       (put (_auctionTradeLSEInstrumentID msg)))
-                    (put (_auctionTradeQuantity msg)))
-                 (put (_auctionTradeNanosecond msg)))
+                                ((*>) (put (_auctionTradeNanosecond msg))
+                                   (put (_auctionTradeQuantity msg)))
+                                (put (_auctionTradeLSEInstrumentID msg)))
+                             (put (_auctionTradeReserved1 msg)))
+                          (put (_auctionTradeReserved2 msg)))
+                       (put (_auctionTradePrice msg)))
+                    (put (_auctionTradeTradeID msg)))
+                 (put (_auctionTradeAuctionType msg)))
         put msg@TradeBreak{}
           = (*>) (Data.ITCH.Types.putMessageType 66)
               ((*>)
-                 ((*>) (put (_tradeBreakTradeType msg))
+                 ((*>) (put (_tradeBreakNanosecond msg))
                     (put (_tradeBreakTradeID msg)))
-                 (put (_tradeBreakNanosecond msg)))
+                 (put (_tradeBreakTradeType msg)))
         put msg@AuctionInfo{}
           = (*>) (Data.ITCH.Types.putMessageType 73)
               ((*>)
@@ -463,15 +476,15 @@ instance Binary ITCHMessage where
                           ((*>)
                              ((*>)
                                 ((*>)
-                                   ((*>) (put (_auctionInfoAuctionType msg))
-                                      (put (_auctionInfoPrice msg)))
-                                   (put (_auctionInfoReserved2 msg)))
-                                (put (_auctionInfoReserved1 msg)))
+                                   ((*>) (put (_auctionInfoNanosecond msg))
+                                      (put (_auctionInfoPairedQuantity msg)))
+                                   (put (_auctionInfoImbalanceQuantity msg)))
+                                (put (_auctionInfoImbalanceDirection msg)))
                              (put (_auctionInfoLSEInstrumentID msg)))
-                          (put (_auctionInfoImbalanceDirection msg)))
-                       (put (_auctionInfoImbalanceQuantity msg)))
-                    (put (_auctionInfoPairedQuantity msg)))
-                 (put (_auctionInfoNanosecond msg)))
+                          (put (_auctionInfoReserved1 msg)))
+                       (put (_auctionInfoReserved2 msg)))
+                    (put (_auctionInfoPrice msg)))
+                 (put (_auctionInfoAuctionType msg)))
         put msg@OffBookTrade{}
           = (*>) (Data.ITCH.Types.putMessageType 120)
               ((*>)
@@ -486,20 +499,20 @@ instance Binary ITCHMessage where
                                          ((*>)
                                             ((*>)
                                                ((*>)
-                                                  ((*>) (put (_offBookTradeFlags msg))
-                                                     (put (_offBookTradeExecutionVenue msg)))
-                                                  (put (_offBookTradeOriginalPrice msg)))
-                                               (put (_offBookTradeTradedCurrency msg)))
-                                            (put (_offBookTradeTradeDate msg)))
-                                         (put (_offBookTradeTradeTime msg)))
-                                      (put (_offBookTradeOffBookTradeType msg)))
-                                   (put (_offBookTradeTradeID msg)))
-                                (put (_offBookTradePrice msg)))
-                             (put (_offBookTradeReserved2 msg)))
-                          (put (_offBookTradeReserved1 msg)))
-                       (put (_offBookTradeLSEInstrumentID msg)))
-                    (put (_offBookTradeExecutedQuantity msg)))
-                 (put (_offBookTradeNanosecond msg)))
+                                                  ((*>) (put (_offBookTradeNanosecond msg))
+                                                     (put (_offBookTradeExecutedQuantity msg)))
+                                                  (put (_offBookTradeLSEInstrumentID msg)))
+                                               (put (_offBookTradeReserved1 msg)))
+                                            (put (_offBookTradeReserved2 msg)))
+                                         (put (_offBookTradePrice msg)))
+                                      (put (_offBookTradeTradeID msg)))
+                                   (Data.ITCH.Types.putAlpha 4 (_offBookTradeOffBookTradeType msg)))
+                                (put (_offBookTradeTradeTime msg)))
+                             (put (_offBookTradeTradeDate msg)))
+                          (Data.ITCH.Types.putAlpha 4 (_offBookTradeTradedCurrency msg)))
+                       (put (_offBookTradeOriginalPrice msg)))
+                    (Data.ITCH.Types.putAlpha 5 (_offBookTradeExecutionVenue msg)))
+                 (put (_offBookTradeFlags msg)))
         put msg@Statistics{}
           = (*>) (Data.ITCH.Types.putMessageType 119)
               ((*>)
@@ -508,14 +521,15 @@ instance Binary ITCHMessage where
                        ((*>)
                           ((*>)
                              ((*>)
-                                ((*>) (put (_statisticsFlags msg))
-                                   (put (_statisticsOpenClosePriceIndicator msg)))
-                                (put (_statisticsPrice msg)))
-                             (put (_statisticsLSEGStatisticsType msg)))
-                          (put (_statisticsReserved2 msg)))
-                       (put (_statisticsReserved1 msg)))
-                    (put (_statisticsLSEInstrumentID msg)))
-                 (put (_statisticsNanosecond msg)))
+                                ((*>) (put (_statisticsNanosecond msg))
+                                   (put (_statisticsLSEInstrumentID msg)))
+                                (put (_statisticsReserved1 msg)))
+                             (put (_statisticsReserved2 msg)))
+                          (Data.ITCH.Types.putAlpha 1 (_statisticsLSEGStatisticsType msg)))
+                       (put (_statisticsPrice msg)))
+                    (Data.ITCH.Types.putAlpha 1
+                       (_statisticsOpenClosePriceIndicator msg)))
+                 (put (_statisticsFlags msg)))
         put _ = fail "Unknown msg type"
  
 instance Arbitrary ITCHMessage where
@@ -970,7 +984,7 @@ arbitraryAddAttributedOrder
                   arbitrary)
                arbitrary)
             arbitrary)
-         arbitrary)
+         (Data.ITCH.Types.arbitraryAlpha 11))
       arbitrary
  
 arbitraryOrderDeleted :: Gen ITCHMessage
@@ -999,7 +1013,8 @@ arbitraryTime = (<$>) Time arbitrary
  
 arbitraryLoginRequest :: Gen ITCHMessage
 arbitraryLoginRequest
-  = (<*>) ((<$>) LoginRequest arbitrary) arbitrary
+  = (<*>) ((<$>) LoginRequest (Data.ITCH.Types.arbitraryAlpha 6))
+      (Data.ITCH.Types.arbitraryAlpha 10)
  
 arbitraryReplayRequest :: Gen ITCHMessage
 arbitraryReplayRequest
@@ -1007,7 +1022,9 @@ arbitraryReplayRequest
  
 arbitrarySnapshotRequest :: Gen ITCHMessage
 arbitrarySnapshotRequest
-  = (<*>) ((<*>) ((<$>) SnapshotRequest arbitrary) arbitrary)
+  = (<*>)
+      ((<*>) ((<$>) SnapshotRequest arbitrary)
+         (Data.ITCH.Types.arbitraryAlpha 6))
       arbitrary
  
 arbitraryLogoutRequest :: Gen ITCHMessage
@@ -1031,7 +1048,9 @@ arbitrarySnapshotResponse
 arbitrarySnapshotComplete :: Gen ITCHMessage
 arbitrarySnapshotComplete
   = (<*>)
-      ((<*>) ((<*>) ((<$>) SnapshotComplete arbitrary) arbitrary)
+      ((<*>)
+         ((<*>) ((<$>) SnapshotComplete arbitrary)
+            (Data.ITCH.Types.arbitraryAlpha 6))
          arbitrary)
       arbitrary
  
@@ -1054,14 +1073,14 @@ arbitrarySymbolDirectory
                                  ((<*>) ((<*>) ((<$>) SymbolDirectory arbitrary) arbitrary)
                                     arbitrary)
                                  arbitrary)
-                              arbitrary)
-                           arbitrary)
-                        arbitrary)
-                     arbitrary)
-                  arbitrary)
-               arbitrary)
+                              (Data.ITCH.Types.arbitraryAlpha 1))
+                           (Data.ITCH.Types.arbitraryAlpha 12))
+                        (Data.ITCH.Types.arbitraryAlpha 12))
+                     (Data.ITCH.Types.arbitraryAlpha 6))
+                  (Data.ITCH.Types.arbitraryAlpha 6))
+               (Data.ITCH.Types.arbitraryAlpha 3))
             arbitrary)
-         arbitrary)
+         (Data.ITCH.Types.arbitraryAlpha 4))
       arbitrary
  
 arbitrarySymbolStatus :: Gen ITCHMessage
@@ -1077,7 +1096,7 @@ arbitrarySymbolStatus
                         arbitrary)
                      arbitrary)
                   arbitrary)
-               arbitrary)
+               (Data.ITCH.Types.arbitraryAlpha 4))
             arbitrary)
          arbitrary)
       arbitrary
@@ -1167,12 +1186,12 @@ arbitraryOffBookTrade
                                  arbitrary)
                               arbitrary)
                            arbitrary)
-                        arbitrary)
+                        (Data.ITCH.Types.arbitraryAlpha 4))
                      arbitrary)
                   arbitrary)
-               arbitrary)
+               (Data.ITCH.Types.arbitraryAlpha 4))
             arbitrary)
-         arbitrary)
+         (Data.ITCH.Types.arbitraryAlpha 5))
       arbitrary
  
 arbitraryStatistics :: Gen ITCHMessage
@@ -1184,7 +1203,7 @@ arbitraryStatistics
                ((<*>)
                   ((<*>) ((<*>) ((<$>) Statistics arbitrary) arbitrary) arbitrary)
                   arbitrary)
-               arbitrary)
+               (Data.ITCH.Types.arbitraryAlpha 1))
             arbitrary)
-         arbitrary)
+         (Data.ITCH.Types.arbitraryAlpha 1))
       arbitrary

@@ -1,8 +1,8 @@
 {-# LANGUAGE DataKinds                  #-}
+{-# LANGUAGE DeriveDataTypeable         #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiWayIf                 #-}
 {-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE DeriveDataTypeable #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.ITCH
@@ -25,10 +25,10 @@ module Data.ITCH.Types (
   , Alpha, BitField, Date(..), Time(..), UInt8, UInt16, UInt32, UInt64, Byte, Price
 
     -- | Utilities
-  , getMessageType, putMessageType
+  , getMessageType, putMessageType, arbitraryAlpha, getAlpha, putAlpha
   ) where
 
-import           Control.Applicative       (pure, (<*), (*>), (<$>), (<*>))
+import           Control.Applicative       (pure, (*>), (<$>), (<*), (<*>))
 import           Control.Monad             (fail)
 import           Data.Binary               (Binary, get, put)
 import           Data.Binary.Get           (Get, getByteString, getWord16le,
@@ -38,16 +38,17 @@ import           Data.Binary.Put           (Put, putByteString, putWord16le,
 import           Data.Bits                 (Bits, bit, shiftR, testBit, (.|.))
 import           Data.ByteString           (ByteString)
 import qualified Data.ByteString           as BS
-import qualified Data.ByteString.Char8     as BS8 (ByteString, pack)
+import qualified Data.ByteString.Char8     as BS8 (ByteString, pack, replicate, length)
 import qualified Data.ByteString.Internal  as BSI
 import qualified Data.ByteString.Unsafe    as BSU
-import           Data.Decimal (DecimalRaw(..), realFracToDecimal)
-import Data.Typeable (Typeable)
+import           Data.Decimal              (DecimalRaw (..), realFracToDecimal)
 import qualified Data.TheBook.MarketData   as Types
 import           Data.Time.Calendar        (Day, fromGregorian, toGregorian)
 import           Data.Time.Clock           (secondsToDiffTime)
-import           Data.Time.LocalTime       (TimeOfDay, makeTimeOfDayValid, timeToTimeOfDay)
 import           Data.Time.Format          (formatTime)
+import           Data.Time.LocalTime       (TimeOfDay, makeTimeOfDayValid,
+                                            timeToTimeOfDay)
+import           Data.Typeable             (Typeable)
 import           Data.Word
 import           Debug.Trace               (trace, traceShow)
 import           Foreign.Ptr               (Ptr, plusPtr)
@@ -64,11 +65,31 @@ import           Test.QuickCheck.Gen       (Gen, elements, suchThat)
 -- | -----------------------------------
 newtype Alpha = Alpha BS8.ByteString
   deriving (Eq, Show)
-instance Arbitrary Alpha where
-  arbitrary = Alpha . BS8.pack <$> arbitrary
-instance Binary Alpha where
-  get = undefined
-  put (Alpha a) = undefined
+
+-- | Generator for 'Alpha' values of this length.
+arbitraryAlpha :: Int -> Gen Alpha
+arbitraryAlpha length = (Alpha . BS.replicate length) <$> arbitrary
+
+-- | Puts the alpha given its length.
+putAlpha :: Int -> Alpha -> Put
+putAlpha length (Alpha a) = putByteString $ padAlpha length a
+
+-- | Gets the alpha given its length.
+getAlpha :: Int -> Get Alpha
+getAlpha length = Alpha <$> getByteString length
+
+-- | Padding for 'Alpha' values.
+padAlphaValue :: Char
+padAlphaValue = ' '
+
+-- | Pads (or trims) the bytestring to be of exactly 'length'.
+padAlpha :: Int -> BS8.ByteString -> BS8.ByteString
+padAlpha length alpha | BS8.length alpha > length = BS.take length alpha
+padAlpha length alpha | BS8.length alpha == length = alpha
+padAlpha length alpha | BS8.length alpha < length = BS.append alpha pad
+  where
+  pad = BS8.replicate r padAlphaValue
+  r   = length - BS.length alpha
 
 -- | Bit Field | 1        | A single byte used to hold up to eight 1-bit flags.
 -- |           |          | Each bit will represent a Boolean flag.
@@ -77,8 +98,6 @@ type BitField = Word8
 
 -- | Byte      | 1        | A single byte used to hold one ASCII character.
 type Byte = Word8
-
-tracee a = trace a a
 
 -- | Date      | 8        | Date specified in the YYYYMMDD format using ASCII characters.
 newtype Date = Date Day

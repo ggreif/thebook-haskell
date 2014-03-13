@@ -21,7 +21,7 @@ tests = testGroup "Data.TheBook.ITCHTest" [qcProps]
 
 qcProps = testGroup "(checked by QuickCheck)"
   [ QC.testProperty "msg == msg" eqTest
-  -- , QC.testProperty "decode (encode msg) == msg" serialiseDeserialise
+  , QC.testProperty "decode (encode msg) == msg" serialiseDeserialise
   ]
 
 eqTest :: ITCH.ITCHMessage -> Bool
