@@ -25,7 +25,8 @@ module Data.ITCH.Types (
   , Alpha, BitField, Date(..), Time(..), UInt8, UInt16, UInt32, UInt64, Byte, Price
 
     -- | Utilities
-  , getMessageType, putMessageType, arbitraryAlpha, getAlpha, putAlpha
+  , getMessageLength, putMessageLength, getMessageType, putMessageType, arbitraryAlpha, getAlpha, putAlpha
+  , skipRemaining
   ) where
 
 import           Control.Applicative       (pure, (*>), (<$>), (<*), (<*>))
@@ -38,7 +39,8 @@ import           Data.Binary.Put           (Put, putByteString, putWord16le,
 import           Data.Bits                 (Bits, bit, shiftR, testBit, (.|.))
 import           Data.ByteString           (ByteString)
 import qualified Data.ByteString           as BS
-import qualified Data.ByteString.Char8     as BS8 (ByteString, pack, replicate, length)
+import qualified Data.ByteString.Char8     as BS8 (ByteString, length, pack,
+                                                   replicate)
 import qualified Data.ByteString.Internal  as BSI
 import qualified Data.ByteString.Unsafe    as BSU
 import           Data.Decimal              (DecimalRaw (..), realFracToDecimal)
@@ -155,7 +157,7 @@ instance Binary UInt64 where
   get = UInt64 <$> getWord64le
   put (UInt64 uint64) = putWord64le uint64
 
--- Unit header:
+-- * Unit header
 -- Field             | Offset | Length   | Type   | Description
 -- ----------------------------------------------------------
 -- Length            | 0      | 2        | UInt16 | Length of the message block including the header and all payload messages.
@@ -172,8 +174,25 @@ instance Binary UInt64 where
 getMessageType :: Get Byte
 getMessageType = get
 
+-- | Simplified putting the msg type in generated code.
 putMessageType :: Byte -> Put
 putMessageType = put
+
+-- | Gets the message length of bytes
+getMessageLength :: Get UInt8
+getMessageLength = get
+
+-- | Consumes any remaining bytes.
+skipRemaining :: UInt8 -> Int -> Get ()
+skipRemaining expected actual
+  = let diff = (fromIntegral expected) - actual
+    in if diff > 0
+        then skip diff
+        else return ()
+
+-- | Simplifies putting the length of the message in generated code.
+putMessageLength :: UInt8 -> Put
+putMessageLength = put
 
 -- | Message header
 class Binary a => MessageHeader a where

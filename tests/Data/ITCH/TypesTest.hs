@@ -27,7 +27,7 @@ qcProps = testGroup "(checked by QuickCheck)"
   [ QC.testProperty "encode (decode Date) == Date" (encodeDecode 8 :: ITCH.Date -> Bool)
   , QC.testProperty "encode (decode Time) == Time" (encodeDecode 8 :: ITCH.Time -> Bool)
   , QC.testProperty "encode (decode Price) == Price" (encodeDecode 8 :: ITCH.Price -> Bool)
-  --, QC.testProperty "encode (decode Alpha) == ALpha" encodeDecodeAlpha
+  --, QC.testProperty "encode (decode Alpha) == Alpha" encodeDecodeAlpha
   ]
 
 encodeDecode :: (Eq a, B.Binary a) => Int64 -> a -> Bool

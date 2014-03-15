@@ -218,33 +218,56 @@ getStatistics
  
 instance Binary ITCHMessage where
         get
-          = do msgType <- Data.ITCH.Types.getMessageType
+          = do msgLength <- Data.ITCH.Types.getMessageLength
+               msgType <- Data.ITCH.Types.getMessageType
                case msgType of
-                   65 -> getAddOrder
-                   70 -> getAddAttributedOrder
-                   68 -> getOrderDeleted
-                   85 -> getOrderModified
-                   121 -> getOrderBookClear
-                   84 -> getTime
-                   1 -> getLoginRequest
-                   3 -> getReplayRequest
-                   129 -> getSnapshotRequest
-                   5 -> getLogoutRequest
-                   2 -> getLoginResponse
-                   4 -> getReplayResponse
-                   130 -> getSnapshotResponse
-                   131 -> getSnapshotComplete
-                   83 -> getSystemEvent
-                   82 -> getSymbolDirectory
-                   72 -> getSymbolStatus
-                   69 -> getOrderExecuted
-                   67 -> getOrderExecutedWithPrice
-                   80 -> getTrade
-                   81 -> getAuctionTrade
-                   66 -> getTradeBreak
-                   73 -> getAuctionInfo
-                   120 -> getOffBookTrade
-                   119 -> getStatistics
+                   65 -> (<*) getAddOrder (Data.ITCH.Types.skipRemaining msgLength 34)
+                   70 -> (<*) getAddAttributedOrder
+                           (Data.ITCH.Types.skipRemaining msgLength 45)
+                   68 -> (<*) getOrderDeleted
+                           (Data.ITCH.Types.skipRemaining msgLength 15)
+                   85 -> (<*) getOrderModified
+                           (Data.ITCH.Types.skipRemaining msgLength 27)
+                   121 -> (<*) getOrderBookClear
+                            (Data.ITCH.Types.skipRemaining msgLength 13)
+                   84 -> (<*) getTime (Data.ITCH.Types.skipRemaining msgLength 6)
+                   1 -> (<*) getLoginRequest
+                          (Data.ITCH.Types.skipRemaining msgLength 18)
+                   3 -> (<*) getReplayRequest
+                          (Data.ITCH.Types.skipRemaining msgLength 9)
+                   129 -> (<*) getSnapshotRequest
+                            (Data.ITCH.Types.skipRemaining msgLength 16)
+                   5 -> (<*) getLogoutRequest
+                          (Data.ITCH.Types.skipRemaining msgLength 2)
+                   2 -> (<*) getLoginResponse
+                          (Data.ITCH.Types.skipRemaining msgLength 3)
+                   4 -> (<*) getReplayResponse
+                          (Data.ITCH.Types.skipRemaining msgLength 10)
+                   130 -> (<*) getSnapshotResponse
+                            (Data.ITCH.Types.skipRemaining msgLength 11)
+                   131 -> (<*) getSnapshotComplete
+                            (Data.ITCH.Types.skipRemaining msgLength 17)
+                   83 -> (<*) getSystemEvent
+                           (Data.ITCH.Types.skipRemaining msgLength 7)
+                   82 -> (<*) getSymbolDirectory
+                           (Data.ITCH.Types.skipRemaining msgLength 65)
+                   72 -> (<*) getSymbolStatus
+                           (Data.ITCH.Types.skipRemaining msgLength 28)
+                   69 -> (<*) getOrderExecuted
+                           (Data.ITCH.Types.skipRemaining msgLength 26)
+                   67 -> (<*) getOrderExecutedWithPrice
+                           (Data.ITCH.Types.skipRemaining msgLength 39)
+                   80 -> (<*) getTrade (Data.ITCH.Types.skipRemaining msgLength 33)
+                   81 -> (<*) getAuctionTrade
+                           (Data.ITCH.Types.skipRemaining msgLength 33)
+                   66 -> (<*) getTradeBreak
+                           (Data.ITCH.Types.skipRemaining msgLength 15)
+                   73 -> (<*) getAuctionInfo
+                           (Data.ITCH.Types.skipRemaining msgLength 30)
+                   120 -> (<*) getOffBookTrade
+                            (Data.ITCH.Types.skipRemaining msgLength 70)
+                   119 -> (<*) getStatistics
+                            (Data.ITCH.Types.skipRemaining msgLength 23)
                    _ -> fail "Unknown msg type"
         put msg@AddOrder{}
           = (*>) (Data.ITCH.Types.putMessageType 65)
