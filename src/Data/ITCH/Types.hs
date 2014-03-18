@@ -40,14 +40,14 @@ import           Data.Bits                 (Bits, bit, shiftR, testBit, (.|.))
 import           Data.ByteString           (ByteString)
 import qualified Data.ByteString           as BS
 import qualified Data.ByteString.Char8     as BS8 (ByteString, length, pack,
-                                                   replicate)
+                                                   replicate, unpack)
 import qualified Data.ByteString.Internal  as BSI
 import qualified Data.ByteString.Unsafe    as BSU
 import           Data.Decimal              (DecimalRaw (..), realFracToDecimal)
 import qualified Data.TheBook.MarketData   as Types
 import           Data.Time.Calendar        (Day, fromGregorian, toGregorian)
 import           Data.Time.Clock           (secondsToDiffTime)
-import           Data.Time.Format          (formatTime)
+import           Data.Time.Format          (formatTime, parseTime)
 import           Data.Time.LocalTime       (TimeOfDay, makeTimeOfDayValid,
                                             timeToTimeOfDay)
 import           Data.Typeable             (Typeable)
@@ -107,7 +107,7 @@ newtype Date = Date Day
 instance Arbitrary Date where
   arbitrary = Date <$> (fromGregorian <$> suchThat arbitrary (> 0) <*> suchThat arbitrary (> 0) <*> suchThat arbitrary (> 0))
 instance Binary Date where
-  get = Date <$> (fromGregorian <$> readNum 4 <*> readNum 2 <*> readNum 2)
+  get = Date <$> (maybeToFail =<< (parseTime defaultTimeLocale "%0Y%m%d" . BS8.unpack <$> getByteString 8))
   put (Date d) = putByteString . BS8.pack $ formatTime defaultTimeLocale "%0Y%m%d" d
 
 -- | Time      | 8        | Time specified in the HH:MM:SS format using ASCII characters.
@@ -121,7 +121,7 @@ newtype Time = Time TimeOfDay
 instance Arbitrary Time where
   arbitrary = Time . timeToTimeOfDay . secondsToDiffTime <$> suchThat arbitrary (\d -> d >= 0 && d <= 60 * 60 * 24)
 instance Binary Time where
-  get = Time <$> (maybeToFail =<< (makeTimeOfDayValid <$> readNum 2 <* skip 1 <*> readNum 2 <* skip 1 <*> (fromInteger <$> readNum 2)))
+  get = Time <$> (maybeToFail =<< (parseTime defaultTimeLocale "%H:%M:%S" . BS8.unpack <$> getByteString 8))
   put (Time t) = putByteString . BS8.pack $ formatTime defaultTimeLocale "%H:%M:%S" t
 
 -- | Price     | 8        | Signed Little-Endian encoded eight byte integer field with eight implied decimal places.
