@@ -8,7 +8,7 @@
 --
 -- Tests 'Data.ITCH'.
 -----------------------------------------------------------------------------
-module Data.ITCH.TypesTest (tests) where
+module Data.ITCH.TypesTest (tests, trickyDate) where
 
 import           Control.Applicative
 import           Control.Arrow
