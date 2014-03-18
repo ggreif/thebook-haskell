@@ -15,9 +15,6 @@ import qualified Data.ITCH.TypesTest as TypesTest
 import qualified Data.ITCH.ITCH51Test as ITCH51Test
 import Test.Tasty as Tasty
 import Test.Tasty.QuickCheck as QC
-import Test.QuickCheck.Gen
-import Control.Monad
-import Control.Concurrent (threadDelay)
 
 main :: IO ()
 main = Tasty.defaultMain tests

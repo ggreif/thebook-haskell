@@ -23,11 +23,9 @@
 -- that they are correct.
 -----------------------------------------------------------------------------
 module Data.ITCH.Types (
-    -- | Message header
-    MessageHeader, messageLength, messageType, messageHeaderLength
 
     -- | Types
-  , Alpha, BitField, Date(..), Time(..), UInt8, UInt16, UInt32, UInt64, Byte, Price
+    Alpha, BitField, Date(..), Time(..), UInt8, UInt16, UInt32, UInt64, Byte, Price
 
     -- | Utilities
   , getMessageLength, putMessageLength, getMessageType, putMessageType, arbitraryAlpha, getAlpha, putAlpha
@@ -187,6 +185,10 @@ putMessageType = put
 getMessageLength :: Get UInt8
 getMessageLength = get
 
+-- | Simplifies putting the length of the message in generated code.
+putMessageLength :: UInt8 -> Put
+putMessageLength = put
+
 -- | Consumes any remaining bytes.
 skipRemaining :: UInt8 -> Int -> Get ()
 skipRemaining expected actual
@@ -194,27 +196,6 @@ skipRemaining expected actual
     in if diff > 0
         then skip diff
         else return ()
-
--- | Simplifies putting the length of the message in generated code.
-putMessageLength :: UInt8 -> Put
-putMessageLength = put
-
--- | Message header
-class Binary a => MessageHeader a where
-  messageLength :: a -> UInt8
-  messageType   :: a -> Byte
-
--- Field             | Offset | Length   | Type   | Description
--- ----------------------------------------------------------
--- Length            | 0      | 1        | UInt8  | Length of message including this field.
--- Message Type      | 1      | 1        | Byte   | Message type
--- Nanosecond        | 2      | 4        | UInt32 | Nanoseconds since last Time message,
---                                                | accurate to the nearest microsecond.
-messageHeaderLength :: Int
-messageHeaderLength
-  = sizeOf (0 :: UInt8)  + -- Length
-    sizeOf (0 :: Byte)   + -- Message Type
-    sizeOf (UInt32 0)      -- Nanosecond
 
 -- | Private definitions.
 
