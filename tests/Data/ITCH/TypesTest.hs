@@ -8,7 +8,7 @@
 --
 -- Tests 'Data.ITCH'.
 -----------------------------------------------------------------------------
-module Data.ITCH.TypesTest (tests, trickyDate) where
+module Data.ITCH.TypesTest (tests) where
 
 import           Control.Applicative
 import           Control.Arrow
@@ -28,7 +28,6 @@ tests = testGroup "Data.TheBook.ITCHTest" [qcProps]
 
 qcProps = testGroup "(checked by QuickCheck)"
   [ testProperty "encode (decode Date) == Date" (encodeDecode 8 :: ITCH.Date -> Bool)
-  , testProperty "encode (decode tricky Date) == tricky Date" encodeDecodeTrickyDate
   , testProperty "encode (decode Time) == Time" (encodeDecode 8 :: ITCH.Time -> Bool)
   , testProperty "encode (decode Price) == Price" (encodeDecode 8 :: ITCH.Price -> Bool)
   ]
@@ -37,16 +36,4 @@ encodeDecode :: (Eq a, B.Binary a) => Int64 -> a -> Bool
 encodeDecode i d =
     let encoded = B.encode d
         decoded = B.decode encoded
-    in traceShow encoded ((d == decoded) && L.length encoded == i)
-
-encodeDecodeTrickyDate :: Property
-encodeDecodeTrickyDate = forAll trickyDate (\d -> traceShow (B.encode d) ((d == (B.decode . B.encode $ d)) && L.length (B.encode d) == 8))
-
-trickyDate :: Gen ITCH.Date
-trickyDate = ITCH.Date <$> (fromGregorian
-            <$> suchThat arbitrary trickyYear
-            <*> suchThat arbitrary trickyMonth
-            <*> suchThat arbitrary trickyDay)
-  where trickyYear x  = x > 0 && x < 1000
-        trickyMonth x = x > 0 && x < 10
-        trickyDay x   = x > 0 && x < 10
+    in (d == decoded) && L.length encoded == i
