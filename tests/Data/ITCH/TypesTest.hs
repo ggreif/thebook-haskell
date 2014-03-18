@@ -37,10 +37,10 @@ encodeDecode :: (Eq a, B.Binary a) => Int64 -> a -> Bool
 encodeDecode i d =
     let encoded = B.encode d
         decoded = B.decode encoded
-    in (d == decoded) && L.length encoded == i
+    in traceShow encoded ((d == decoded) && L.length encoded == i)
 
 encodeDecodeTrickyDate :: Property
-encodeDecodeTrickyDate = forAll trickyDate (\d -> traceShow d ((d == (B.decode . B.encode $ d)) && L.length (B.encode d) == 8))
+encodeDecodeTrickyDate = forAll trickyDate (\d -> traceShow (B.encode d) ((d == (B.decode . B.encode $ d)) && L.length (B.encode d) == 8))
 
 trickyDate :: Gen ITCH.Date
 trickyDate = ITCH.Date <$> (fromGregorian
