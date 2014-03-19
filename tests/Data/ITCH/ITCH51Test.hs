@@ -26,7 +26,7 @@ qcProps = testGroup "(checked by QuickCheck)"
   [ QC.testProperty "msg == msg" eqTest
   , QC.testProperty "decode (encode msg) == msg" serialiseDeserialise
   , QC.testProperty "block of messages should deserialise cleanly" serialiseDeserialiseBlock
-  , QC.testProperty "block of messages with modified sizes should deserialise cleanly" serialiseDeserialiseBlockDifferentLengths
+  , QC.testProperty "block of right padded should deserialise cleanly" serialiseDeserialiseBlockDifferentLengths
   ]
 
 eqTest :: ITCH.ITCHMessage -> Bool
