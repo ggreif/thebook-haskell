@@ -49,8 +49,7 @@ import           Data.Decimal              (DecimalRaw (..), realFracToDecimal)
 import           Data.Time.Calendar        (Day (..))
 import           Data.Time.Clock           (secondsToDiffTime)
 import           Data.Time.Format          (formatTime, parseTime)
-import           Data.Time.LocalTime       (TimeOfDay,
-                                            timeToTimeOfDay)
+import           Data.Time.LocalTime       (TimeOfDay, timeToTimeOfDay)
 import           Data.Word
 import           Debug.Trace               (trace, traceShow)
 import           Foreign.Storable          (Storable)
@@ -157,17 +156,34 @@ instance Binary UInt64 where
   put (UInt64 uint64) = putWord64le uint64
 
 -- * Unit header
--- Field             | Offset | Length   | Type   | Description
--- ----------------------------------------------------------
--- Length            | 0      | 2        | UInt16 | Length of the message block including the header and all payload messages.
--- Message Count     | 2      | 1        | UInt8  | Number of payload messages that will follow the header.
--- Market Data Group | 3      | 1        | Byte   | Identity of the market data group the payload messages relate to.
---                   |        |          |        | This field is not validated for client initiated messages.
--- Sequence Number   | 4      | 4        | UInt32 | Sequence number of the first payload message.
--- Payload           | 8      | Variable | -      | One or more payload messages.
+--     Field             | Offset | Length   | Type   | Description
+-- ----------------------------------------------------------------
+data UnitHeader a = UnitHeader {
 
--- * Message header
--- Defines the message type and length.
+    -- Length            | 0      | 2        | UInt16 | Length of the message block including the header and all payload messages.
+    _unitHeaderLength          :: !UInt16
+
+    -- Message Count     | 2      | 1        | UInt8  | Number of payload messages that will follow the header.
+  , _unitHeaderMessageCount    :: !UInt8
+
+    -- Market Data Group | 3      | 1        | Byte   | Identity of the market data group the payload messages relate to.
+    --                   |        |          |        | This field is not validated for client initiated messages.
+  , _unitHeaderMarketDataGroup :: !Byte
+
+    -- Sequence Number   | 4      | 4        | UInt32 | Sequence number of the first payload message.
+  , _unitHeaderSequenceNumber  :: !UInt32
+
+    -- Payload           | 8      | Variable | -      | One or more payload messages.
+  , _unitHeaderPayload         :: ![a]
+} deriving (Eq, Show)
+
+instance Binary a => Binary (UnitHeader a) where
+  put (UnitHeader {}) = undefined
+  get = undefined
+
+
+
+-- | * Utilities
 
 -- | Simplifies getting the msg type in generated code.
 getMessageType :: Get Byte
@@ -193,7 +209,7 @@ skipRemaining expected actual
         then skip diff
         else return ()
 
--- | Private definitions.
+-- | Transforms `Data.Maybe` into a `Get`, where `Nothing` constitutes a call to `fail`.
 
 maybeToFail :: Maybe a -> Get a
 maybeToFail (Just a) = pure a
