@@ -27,40 +27,36 @@ module Data.ITCH.Types (
     -- | Types
     Alpha, BitField, Date(..), Time(..), UInt8, UInt16, UInt32, UInt64, Byte, Price
 
+    -- | Unit header
+
     -- | Utilities
   , getMessageLength, putMessageLength, getMessageType, putMessageType, arbitraryAlpha, getAlpha, putAlpha
   , skipRemaining
   ) where
 
-import           Control.Applicative       (pure, (*>), (<$>), (<*), (<*>))
+import           Control.Applicative       (pure, (<$>))
 import           Control.Monad             (fail)
 import           Data.Binary               (Binary, get, put)
 import           Data.Binary.Get           (Get, getByteString, getWord16le,
                                             getWord32le, getWord64le, skip)
 import           Data.Binary.Put           (Put, putByteString, putWord16le,
                                             putWord32le, putWord64le)
-import           Data.Bits                 (Bits, bit, shiftR, testBit, (.|.))
-import           Data.ByteString           (ByteString)
 import qualified Data.ByteString           as BS
 import qualified Data.ByteString.Char8     as BS8 (ByteString, length, pack,
                                                    replicate, unpack)
-import qualified Data.ByteString.Internal  as BSI
 import qualified Data.ByteString.Unsafe    as BSU
 import           Data.Decimal              (DecimalRaw (..), realFracToDecimal)
-import qualified Data.TheBook.MarketData   as Types
-import           Data.Time.Calendar        (Day(..), fromGregorian, toGregorian)
+import           Data.Time.Calendar        (Day (..))
 import           Data.Time.Clock           (secondsToDiffTime)
 import           Data.Time.Format          (formatTime, parseTime)
-import           Data.Time.LocalTime       (TimeOfDay, makeTimeOfDayValid,
+import           Data.Time.LocalTime       (TimeOfDay,
                                             timeToTimeOfDay)
-import           Data.Typeable             (Typeable)
 import           Data.Word
 import           Debug.Trace               (trace, traceShow)
-import           Foreign.Ptr               (Ptr, plusPtr)
-import           Foreign.Storable          (Storable, peek, poke, sizeOf)
+import           Foreign.Storable          (Storable)
 import           System.Locale             (defaultTimeLocale)
 import           Test.QuickCheck.Arbitrary (Arbitrary, arbitrary)
-import           Test.QuickCheck.Gen       (Gen, elements, suchThat)
+import           Test.QuickCheck.Gen       (Gen, suchThat)
 
 -- * Data types
 -- | Data Type | Length   | Description
@@ -91,7 +87,7 @@ padAlphaValue = ' '
 padAlpha :: Int -> BS8.ByteString -> BS8.ByteString
 padAlpha length alpha | BS8.length alpha > length = BS.take length alpha
 padAlpha length alpha | BS8.length alpha == length = alpha
-padAlpha length alpha | BS8.length alpha < length = BS.append alpha pad
+padAlpha length alpha | otherwise = BS.append alpha pad
   where
   pad = BS8.replicate r padAlphaValue
   r   = length - BS.length alpha
