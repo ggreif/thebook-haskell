@@ -1,8 +1,5 @@
-{-# LANGUAGE DataKinds                  #-}
-{-# LANGUAGE DeriveDataTypeable         #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE MultiWayIf                 #-}
-{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE RecordWildCards            #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.ITCH
@@ -34,8 +31,8 @@ module Data.ITCH.Types (
   , skipRemaining
   ) where
 
-import           Control.Applicative       (pure, (<$>))
-import           Control.Monad             (fail)
+import           Control.Applicative       (pure, (*>), (<$>))
+import           Control.Monad             (fail, forM_)
 import           Data.Binary               (Binary, get, put)
 import           Data.Binary.Get           (Get, getByteString, getWord16le,
                                             getWord32le, getWord64le, skip)
@@ -46,6 +43,7 @@ import qualified Data.ByteString.Char8     as BS8 (ByteString, length, pack,
                                                    replicate, unpack)
 import qualified Data.ByteString.Unsafe    as BSU
 import           Data.Decimal              (DecimalRaw (..), realFracToDecimal)
+
 import           Data.Time.Calendar        (Day (..))
 import           Data.Time.Clock           (secondsToDiffTime)
 import           Data.Time.Format          (formatTime, parseTime)
@@ -178,10 +176,13 @@ data UnitHeader a = UnitHeader {
 } deriving (Eq, Show)
 
 instance Binary a => Binary (UnitHeader a) where
-  put (UnitHeader {}) = undefined
+  put UnitHeader {..}
+    = put _unitHeaderLength          *>
+      put _unitHeaderMessageCount    *>
+      put _unitHeaderMarketDataGroup *>
+      put _unitHeaderSequenceNumber  *>
+      forM_ (zip [1.._unitHeaderMessageCount] _unitHeaderPayload) (put . snd)
   get = undefined
-
-
 
 -- | * Utilities
 
