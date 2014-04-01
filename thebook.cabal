@@ -3,8 +3,8 @@ version:            0.1.0
 synopsis:           Exchange simulator in Haskell.
 description:        This package implements an LSE Millenium clone in Haskell.
 category:           Finance
-homepage:           https://github.com/tfausak/haskeleton
-bug-reports:        https://github.com/tfausak/haskeleton/issues
+homepage:           https://github.com/jkozlowski/thebook-haskell
+bug-reports:        https://github.com/jkozlowski/thebook-haskell/issues
 license-file:       LICENSE
 license:            MIT
 
