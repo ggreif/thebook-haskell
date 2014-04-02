@@ -24,33 +24,34 @@ module Data.ITCH.Types (
     -- | Types
     Alpha, BitField, Date(..), Time(..), UInt8, UInt16, UInt32, UInt64, Byte, Price
 
-    -- | Unit header
-
     -- | Utilities
   , getMessageLength, putMessageLength, getMessageType, putMessageType, arbitraryAlpha, getAlpha, putAlpha
   , skipRemaining
+
+    -- | Encoding and decoding
+  , UnitHeader(..), writeMessages, readMessages
   ) where
 
 import           Control.Applicative       (pure, (*>), (<$>))
-import           Control.Monad             (fail, forM_)
+import           Control.Monad             (fail, forM_, replicateM)
 import           Data.Binary               (Binary, get, put)
 import           Data.Binary.Get           (Get, getByteString, getWord16le,
                                             getWord32le, getWord64le, skip)
 import           Data.Binary.Put           (Put, putByteString, putWord16le,
-                                            putWord32le, putWord64le)
+                                            putWord32le, putWord64le, runPut)
 import qualified Data.ByteString           as BS
 import qualified Data.ByteString.Char8     as BS8 (ByteString, length, pack,
                                                    replicate, unpack)
-import qualified Data.ByteString.Unsafe    as BSU
+import qualified Data.ByteString.Lazy      as BSL
 import           Data.Decimal              (DecimalRaw (..), realFracToDecimal)
-
+import           Data.Monoid               ((<>))
 import           Data.Time.Calendar        (Day (..))
 import           Data.Time.Clock           (secondsToDiffTime)
 import           Data.Time.Format          (formatTime, parseTime)
 import           Data.Time.LocalTime       (TimeOfDay, timeToTimeOfDay)
 import           Data.Word
 import           Debug.Trace               (trace, traceShow)
-import           Foreign.Storable          (Storable)
+import           Foreign.Storable          (Storable, sizeOf)
 import           System.Locale             (defaultTimeLocale)
 import           Test.QuickCheck.Arbitrary (Arbitrary, arbitrary)
 import           Test.QuickCheck.Gen       (Gen, suchThat)
@@ -175,14 +176,34 @@ data UnitHeader a = UnitHeader {
   , _unitHeaderPayload         :: ![a]
 } deriving (Eq, Show)
 
-instance Binary a => Binary (UnitHeader a) where
-  put UnitHeader {..}
-    = put _unitHeaderLength          *>
-      put _unitHeaderMessageCount    *>
-      put _unitHeaderMarketDataGroup *>
-      put _unitHeaderSequenceNumber  *>
-      forM_ (zip [1.._unitHeaderMessageCount] _unitHeaderPayload) (put . snd)
-  get = undefined
+-- | Size of the header.
+sizeOfHeader :: Int
+sizeOfHeader = (sizeOf (undefined :: UInt16))
+             + (sizeOf (undefined :: UInt8))
+             + (sizeOf (undefined :: Byte))
+             + (sizeOf (undefined :: UInt32))
+
+-- | Write the messages with unit header prepended.
+writeMessages :: Binary a => [a] -> Byte -> UInt32 -> BSL.ByteString
+writeMessages msgs marketDataGroup headerSequenceNumber =
+  let serialised = runPut $ forM_ msgs put
+      size = UInt16 (fromIntegral $ sizeOfHeader + (fromIntegral $ BSL.length serialised))
+      unitHeader = runPut $
+        put size *>
+        put (fromIntegral . length $ msgs :: UInt8) *>
+        put marketDataGroup *>
+        put headerSequenceNumber
+  in unitHeader <> serialised
+
+-- | Reads the list of messages and the unit header.
+readMessages :: Binary a => Get (UnitHeader a)
+readMessages = do
+  headerLength    <- get
+  msgCount        <- get
+  marketDataGroup <- get
+  sequenceNumber  <- get
+  msgs            <- replicateM (fromIntegral msgCount) get
+  return $ UnitHeader headerLength msgCount marketDataGroup sequenceNumber msgs
 
 -- | * Utilities
 

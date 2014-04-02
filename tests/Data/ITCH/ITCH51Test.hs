@@ -27,6 +27,7 @@ qcProps = testGroup "(checked by QuickCheck)"
   , QC.testProperty "decode (encode msg) == msg" serialiseDeserialise
   , QC.testProperty "block of messages should deserialise cleanly" serialiseDeserialiseBlock
   , QC.testProperty "block of right padded should deserialise cleanly" serialiseDeserialiseBlockDifferentLengths
+  , QC.testProperty "block of messages with unit header should deserialise cleanly" serialiseDeserialiseBlockWithUnitHeader
   ]
 
 eqTest :: ITCH.ITCHMessage -> Bool
@@ -54,6 +55,15 @@ deserialiseBlock bs = map (\(_, _, msg) -> msg) (rights (singleFold bs))
           | otherwise = case (Get.runGetOrFail (B.get :: Get.Get ITCH.ITCHMessage) b) of
                         l@(Left (remaining, _, _)) -> [l] ++ (singleFold remaining)
                         r@(Right (remaining, _, newMsg)) -> [r] ++ (singleFold remaining)
+
+serialiseDeserialiseBlockWithUnitHeader :: [ITCH.ITCHMessage] -> Types.Byte -> Types.UInt32 -> Bool
+serialiseDeserialiseBlockWithUnitHeader msg marketDataGroup seqNo =
+  let serialised   = Types.writeMessages msg marketDataGroup seqNo
+      unitHeader   = (Get.runGet Types.readMessages serialised) :: Types.UnitHeader ITCH.ITCHMessage
+  in Types._unitHeaderPayload unitHeader == msg &&
+     Types._unitHeaderMessageCount unitHeader == (fromIntegral $ length msg) &&
+     Types._unitHeaderMarketDataGroup unitHeader == marketDataGroup &&
+     Types._unitHeaderSequenceNumber unitHeader == seqNo
 
 -- | Pads the message on the right with additional bytes
 --  and updates the message length.
