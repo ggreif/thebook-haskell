@@ -1,6 +1,7 @@
 thebook-haskell
 ===============
 [![Build Status](https://travis-ci.org/jkozlowski/thebook-haskell.png?branch=master)](https://travis-ci.org/jkozlowski/thebook-haskell)
+[![Coverage Status](http://coveralls.io/repos/jkozlowski/thebook-haskell/badge.png?branch=master)](http://coveralls.io/r/jkozlowski/thebook-haskell?branch=master)
 
 Exchange simulator in Haskell
 
