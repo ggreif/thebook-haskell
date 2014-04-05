@@ -39,7 +39,7 @@ server a = produceMessages $$ CN.appSink a
 
 runServer :: Int -> IO ()
 runServer port = CN.runTCPServer settings server
-  where settings = CN.serverSettings port "!4"
+  where settings = CN.serverSettings port (CN.Host "localhost")
 
 -- | Prints the usage information.
 usage :: IO ()
