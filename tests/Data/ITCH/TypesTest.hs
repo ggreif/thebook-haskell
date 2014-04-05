@@ -10,22 +10,17 @@
 -----------------------------------------------------------------------------
 module Data.ITCH.TypesTest (tests) where
 
-import           Control.Applicative
-import           Control.Arrow
 import qualified Data.Binary           as B
-import qualified Data.ByteString.Char8 as B8
 import qualified Data.ByteString.Lazy  as L
 import           Data.Int
 import qualified Data.ITCH.Types       as ITCH
-import           Data.Time.Calendar    (Day, fromGregorian, toGregorian)
-import           Debug.Trace           (trace, traceShow)
 import           Test.Tasty
 import           Test.Tasty.QuickCheck
-import Test.QuickCheck.Gen
 
 tests :: TestTree
 tests = testGroup "Data.TheBook.ITCHTest" [qcProps]
 
+qcProps :: TestTree
 qcProps = testGroup "(checked by QuickCheck)"
   [ testProperty "encode (decode Date) == Date" (encodeDecode 8 :: ITCH.Date -> Bool)
   , testProperty "encode (decode Time) == Time" (encodeDecode 8 :: ITCH.Time -> Bool)

@@ -34,7 +34,7 @@ module Data.ITCH.Types (
   ) where
 
 import           Control.Applicative       (pure, (*>), (<$>))
-import           Control.Monad             (fail, forM_, replicateM)
+import           Control.Monad             (forM_, replicateM)
 import           Data.Binary               (Binary, get, put)
 import           Data.Binary.Get           (Get, getByteString, getWord16le,
                                             getWord32le, getWord64le, skip)
@@ -51,7 +51,6 @@ import           Data.Time.Clock           (secondsToDiffTime)
 import           Data.Time.Format          (formatTime, parseTime)
 import           Data.Time.LocalTime       (TimeOfDay, timeToTimeOfDay)
 import           Data.Word
-import           Debug.Trace               (trace, traceShow)
 import           Foreign.Storable          (Storable, sizeOf)
 import           System.Locale             (defaultTimeLocale)
 import           Test.QuickCheck.Arbitrary (Arbitrary, arbitrary)
@@ -68,28 +67,28 @@ newtype Alpha = Alpha BS8.ByteString
 
 -- | Generator for 'Alpha' values of this length.
 arbitraryAlpha :: Int -> Gen Alpha
-arbitraryAlpha length = (Alpha . BS.replicate length) <$> arbitrary
+arbitraryAlpha l = (Alpha . BS.replicate l) <$> arbitrary
 
 -- | Puts the alpha given its length.
 putAlpha :: Int -> Alpha -> Put
-putAlpha length (Alpha a) = putByteString $ padAlpha length a
+putAlpha l (Alpha a) = putByteString $ padAlpha l a
 
 -- | Gets the alpha given its length.
 getAlpha :: Int -> Get Alpha
-getAlpha length = Alpha <$> getByteString length
+getAlpha l = Alpha <$> getByteString l
 
 -- | Padding for 'Alpha' values.
 padAlphaValue :: Char
 padAlphaValue = ' '
 
--- | Pads (or trims) the bytestring to be of exactly 'length'.
+-- | Pads (or trims) the bytestring to be of exactly 'size'.
 padAlpha :: Int -> BS8.ByteString -> BS8.ByteString
-padAlpha length alpha | BS8.length alpha > length = BS.take length alpha
-padAlpha length alpha | BS8.length alpha == length = alpha
-padAlpha length alpha | otherwise = BS.append alpha pad
+padAlpha size alpha | BS8.length alpha > size = BS.take size alpha
+padAlpha size alpha | BS8.length alpha == size = alpha
+padAlpha size alpha | otherwise = BS.append alpha pad
   where
   pad = BS8.replicate r padAlphaValue
-  r   = length - BS.length alpha
+  r   = size - BS.length alpha
 
 -- | Bit Field | 1        | A single byte used to hold up to eight 1-bit flags.
 -- |           |          | Each bit will represent a Boolean flag.
@@ -142,12 +141,14 @@ instance Binary UInt16 where
   put (UInt16 uint16) = putWord16le uint16
 
 -- UInt32    | 4        | Little-Endian encoded 32 bit unsigned integer.
+uint32 :: Word32 -> UInt32
 uint32 = UInt32
+
 newtype UInt32 = UInt32 Word32
   deriving (Eq, Show, Storable, Arbitrary)
 instance Binary UInt32 where
   get = UInt32 <$> getWord32le
-  put (UInt32 uint32) = putWord32le uint32
+  put (UInt32 u) = putWord32le u
 
 -- UInt64    | 8        | Little-Endian encoded 64 bit unsigned integer.
 newtype UInt64 = UInt64 Word64

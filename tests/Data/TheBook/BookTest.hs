@@ -20,6 +20,7 @@ import           Test.Tasty.QuickCheck as QC
 tests :: TestTree
 tests = testGroup "Data.TheBook.TheBookTest" [qcProps]
 
+qcProps :: TestTree
 qcProps = testGroup "(checked by QuickCheck)"
   [ QC.testProperty "fromList buys == reverse stable sort by price . toList" isCorrectlySortedBuy
   , QC.testProperty "fromList sells == stable sort by price . toList" isCorrectlySortedSell

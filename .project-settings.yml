@@ -11,5 +11,6 @@ extra-packages: ! 'Hackage: tasty-quickcheck 0.3.1
 
   Hackage: Decimal 0.3.1'
 ghc-args:
-- -v
+- -Wall
+- -fwarn-incomplete-patterns
 excluded-modules: []

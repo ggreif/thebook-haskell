@@ -22,6 +22,7 @@ import           Test.Tasty.QuickCheck as QC
 tests :: TestTree
 tests = testGroup "Data.TheBook.ITCHTest" [qcProps]
 
+qcProps :: TestTree
 qcProps = testGroup "(checked by QuickCheck)"
   [ QC.testProperty "msg == msg" eqTest
   , QC.testProperty "decode (encode msg) == msg" serialiseDeserialise
@@ -54,7 +55,7 @@ deserialiseBlock bs = map (\(_, _, msg) -> msg) (rights (singleFold bs))
           | L.null b  = []
           | otherwise = case (Get.runGetOrFail (B.get :: Get.Get ITCH.ITCHMessage) b) of
                         l@(Left (remaining, _, _)) -> [l] ++ (singleFold remaining)
-                        r@(Right (remaining, _, newMsg)) -> [r] ++ (singleFold remaining)
+                        r@(Right (remaining, _, _)) -> [r] ++ (singleFold remaining)
 
 serialiseDeserialiseBlockWithUnitHeader :: Types.Byte -> Types.UInt32 -> [ITCH.ITCHMessage] -> Bool
 serialiseDeserialiseBlockWithUnitHeader marketDataGroup seqNo msg =

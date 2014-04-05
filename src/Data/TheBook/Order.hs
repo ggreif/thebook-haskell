@@ -10,7 +10,6 @@
 -----------------------------------------------------------------------------
 module Data.TheBook.Order where
 
-import qualified Data.Text as T
 import qualified Data.TheBook.Types as Types
 import Data.Text (Text)
 

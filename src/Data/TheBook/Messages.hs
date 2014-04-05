@@ -10,10 +10,8 @@
 -----------------------------------------------------------------------------
 module Data.TheBook.Messages where
 
-import qualified Data.Text as T
 import Data.Text (Text)
 import qualified Data.TheBook.Types as Types
-
 
 -- | The new order message type is used by institutions wishing
 -- to electronically submit securities and forex orders to a

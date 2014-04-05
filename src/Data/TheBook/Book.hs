@@ -87,10 +87,10 @@ insert :: Side a =>
        -> Types.Qty   -- ^ quantity of the new entry
        -> Book a      -- ^ book to insert to
        -> Book a      -- ^ modified book
-insert price qty (Book book) =
-        let newEntry = Entry { price = price, qty = qty }
+insert price' qty' (Book book) =
+        let newEntry = Entry { price = price', qty = qty' }
             newLevel = Seq.singleton newEntry
-            newPrice = liftPrice price
+            newPrice = liftPrice price'
         in Book $ Map.alter (Just . Maybe.maybe newLevel (Seq.|> newEntry )) newPrice book
 
 -- | Creates a 'Book' from a list of ('Types.Price', 'Types.Qty') pairs.

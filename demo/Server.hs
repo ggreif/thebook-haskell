@@ -13,13 +13,10 @@
 -----------------------------------------------------------------------------
 module Main where
 
-import           Control.Monad          ((>>=), forM_)
+import           Control.Monad          (forM_)
 import           Control.Monad.IO.Class (liftIO)
-import qualified Data.ByteString       as BS
-import qualified Data.ByteString.Char8 as B8
 import qualified Data.ByteString.Lazy  as LBS
 import           Data.Conduit
-import qualified Data.Conduit.List      as CL
 import qualified Data.Conduit.Network   as CN
 import qualified Data.ITCH.ITCH51       as ITCH
 import qualified Data.ITCH.Types        as ITypes
@@ -32,8 +29,7 @@ import           Text.Read              (readMaybe)
 
 server :: CN.AppData IO -> IO ()
 server a = produceMessages $$ CN.appSink a
-  where bla = undefined
-        produceMessages = do
+  where produceMessages = do
           liftIO $ putStrLn "Starting to pipe messages"
           msgs :: [ITCH.ITCHMessage] <- liftIO $ Gen.sample' Arbitrary.arbitrary
           liftIO . putStrLn $ "Going to push " <> (show $ length msgs) <> " messages"

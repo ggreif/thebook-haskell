@@ -17,8 +17,6 @@ module Data.TheBook.MarketData (
   , Printable(..)
 ) where
 
-import Data.Word (Word32)
-import qualified Data.TheBook.Types as Types
 import Test.QuickCheck.Arbitrary (Arbitrary, arbitrary)
 import Test.QuickCheck.Gen (elements)
 
