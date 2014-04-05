@@ -22,7 +22,8 @@
 module Data.ITCH.Types (
 
     -- | Types
-    Alpha, BitField, Date(..), Time(..), UInt8, UInt16, UInt32, UInt64, Byte, Price
+    Alpha, BitField, Date(..), Time(..), UInt8, UInt16, UInt32, UInt64, Byte, Price,
+    uint32
 
     -- | Utilities
   , getMessageLength, putMessageLength, getMessageType, putMessageType, arbitraryAlpha, getAlpha, putAlpha
@@ -141,6 +142,7 @@ instance Binary UInt16 where
   put (UInt16 uint16) = putWord16le uint16
 
 -- UInt32    | 4        | Little-Endian encoded 32 bit unsigned integer.
+uint32 = UInt32
 newtype UInt32 = UInt32 Word32
   deriving (Eq, Show, Storable, Arbitrary)
 instance Binary UInt32 where
@@ -184,8 +186,8 @@ sizeOfHeader = (sizeOf (undefined :: UInt16))
              + (sizeOf (undefined :: UInt32))
 
 -- | Write the messages with unit header prepended.
-writeMessages :: Binary a => [a] -> Byte -> UInt32 -> BSL.ByteString
-writeMessages msgs marketDataGroup headerSequenceNumber =
+writeMessages :: Binary a => Byte -> UInt32 -> [a] -> BSL.ByteString
+writeMessages marketDataGroup headerSequenceNumber msgs =
   let serialised = runPut $ forM_ msgs put
       size = UInt16 (fromIntegral $ sizeOfHeader + (fromIntegral $ BSL.length serialised))
       unitHeader = runPut $

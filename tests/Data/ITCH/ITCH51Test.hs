@@ -56,9 +56,9 @@ deserialiseBlock bs = map (\(_, _, msg) -> msg) (rights (singleFold bs))
                         l@(Left (remaining, _, _)) -> [l] ++ (singleFold remaining)
                         r@(Right (remaining, _, newMsg)) -> [r] ++ (singleFold remaining)
 
-serialiseDeserialiseBlockWithUnitHeader :: [ITCH.ITCHMessage] -> Types.Byte -> Types.UInt32 -> Bool
-serialiseDeserialiseBlockWithUnitHeader msg marketDataGroup seqNo =
-  let serialised   = Types.writeMessages msg marketDataGroup seqNo
+serialiseDeserialiseBlockWithUnitHeader :: Types.Byte -> Types.UInt32 -> [ITCH.ITCHMessage] -> Bool
+serialiseDeserialiseBlockWithUnitHeader marketDataGroup seqNo msg =
+  let serialised   = Types.writeMessages marketDataGroup seqNo msg
       unitHeader   = (Get.runGet Types.readMessages serialised) :: Types.UnitHeader ITCH.ITCHMessage
   in Types._unitHeaderPayload unitHeader == msg &&
      Types._unitHeaderMessageCount unitHeader == (fromIntegral $ length msg) &&
