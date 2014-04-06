@@ -11,21 +11,17 @@
 -----------------------------------------------------------------------------
 module Main where
 
-import           Control.Monad         ((>>), (>>=))
 import qualified Data.Binary           as B
 import qualified Data.Binary.Get       as Get
-import qualified Data.ByteString       as BS
 import qualified Data.ByteString.Char8 as B8
 import qualified Data.ByteString.Lazy  as LBS
 import           Data.Conduit
 import qualified Data.Conduit.List     as CL
 import qualified Data.Conduit.Network  as CN (AppData, appSource,
-                                              clientSettings, runTCPClient,
-                                              sourceSocket)
+                                              clientSettings, runTCPClient)
 import qualified Data.ITCH.ITCH51      as ITCH
 import qualified Data.ITCH.Types       as ITypes
 import           Data.Monoid           ((<>))
-import           Network.Socket        (Socket)
 import           System.Environment    (getArgs)
 import           System.Exit           (ExitCode (..), exitWith)
 import           Text.Read             (readMaybe)
@@ -33,7 +29,7 @@ import           Text.Read             (readMaybe)
 readITCH :: B.Get (ITypes.UnitHeader ITCH.ITCHMessage)
 readITCH = ITypes.readMessages
 
-client :: CN.AppData IO -> IO ()
+client :: CN.AppData -> IO ()
 client a = CN.appSource a $$ CL.map toMessage
                           =$ CL.mapM_ print
   where toMessage = Get.runGet readITCH . LBS.fromStrict

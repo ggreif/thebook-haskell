@@ -5,11 +5,23 @@ module-template: ! "------------------------------------------------------------
 extensions: {}
 environment: ghc-7.8-unstable
 cabal-file: thebook.cabal
-hidden-packages: ''
+hidden-packages: network-conduit
 version: 1
 extra-packages: ! 'Hackage: tasty-quickcheck 0.3.1
 
-  Hackage: Decimal 0.3.1'
+  Hackage: Decimal 0.3.1
+
+  Hackage: exceptions 0.5
+
+  Hackage: resourcet 1.1.0
+
+  Hackage: streaming-commons 0.1.0.2
+
+  Hackage: text-stream-decode 0.1.0.5
+
+  Hackage: conduit 1.1.0
+
+  Hackage: conduit-extra 1.1.0'
 ghc-args:
 - -Wall
 - -fwarn-incomplete-patterns
