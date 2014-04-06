@@ -27,7 +27,7 @@ import qualified Test.QuickCheck.Gen    as Gen
 import qualified Test.QuickCheck.Arbitrary as Arbitrary
 import           Text.Read              (readMaybe)
 
-server :: CN.AppData IO -> IO ()
+server :: CN.AppData -> IO ()
 server a = produceMessages $$ CN.appSink a
   where produceMessages = do
           liftIO $ putStrLn "Starting to pipe messages"
@@ -39,7 +39,7 @@ server a = produceMessages $$ CN.appSink a
 
 runServer :: Int -> IO ()
 runServer port = CN.runTCPServer settings server
-  where settings = CN.serverSettings port (CN.Host "localhost")
+  where settings = CN.serverSettings port "*"
 
 -- | Prints the usage information.
 usage :: IO ()
