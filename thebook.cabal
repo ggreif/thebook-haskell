@@ -83,6 +83,7 @@ executable thebook-demo-client
                      , hslogger
                      , conduit
                      , conduit-extra >= 1.1.0
+                     , resourcet
                      , thebook
                      , QuickCheck == 2.6.*
   hs-source-dirs:      demo
