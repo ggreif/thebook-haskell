@@ -31,8 +31,12 @@ readITCH = ITypes.readMessages
 
 client :: CN.AppData -> IO ()
 client a = CN.appSource a $$ CL.map toMessage
-                          =$ CL.mapM_ print
+                          =$ CL.mapM_ printHeader
   where toMessage = Get.runGet readITCH . LBS.fromStrict
+        printHeader header = do
+          putStrLn $ "Received: "
+          print header
+          putStrLn ""
 
 runClient :: String -> Int -> IO ()
 runClient hostname port = do
