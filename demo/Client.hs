@@ -13,13 +13,11 @@
 module Main where
 
 import           Control.Exception            (Exception)
-import           Control.Monad.IO.Class       (liftIO)
 import           Control.Monad.Trans.Resource (MonadThrow, monadThrow)
 import qualified Data.Binary                  as B
 import qualified Data.Binary.Get              as Get
 import qualified Data.ByteString              as B
 import qualified Data.ByteString.Char8        as B8
-import qualified Data.ByteString.Lazy         as LBS
 import           Data.Conduit
 import qualified Data.Conduit.List            as CL
 import qualified Data.Conduit.Network         as CN (AppData, appSource,
@@ -35,6 +33,35 @@ import           Text.Read                    (readMaybe)
 
 readITCH :: B.Get (ITypes.UnitHeader ITCH.ITCHMessage)
 readITCH = ITypes.readMessages
+
+client :: CN.AppData -> IO ()
+client a = CN.appSource a $$ conduitGet readITCH
+                          =$ CL.mapM_ printHeader
+  where printHeader header = do
+          putStrLn $ "Received: "
+          print header
+          putStrLn ""
+
+runClient :: String -> Int -> IO ()
+runClient hostname port = do
+    putStrLn $ "Going to connect to: " <> hostname <> ":" <> show port
+    CN.runTCPClient settings client
+  where settings = CN.clientSettings port (B8.pack hostname)
+
+-- | Prints the usage information.
+usage :: IO ()
+usage = putStrLn "Usage: thebook-client [hostname] [port]"
+
+parse :: [String] -> IO ()
+parse [hostname, port] = case readMaybe port of
+  Nothing      -> putStrLn $ "Cannot parse the port: " <> port
+  Just portInt -> runClient hostname portInt
+parse _ = usage >> exitWith ExitSuccess
+
+main :: IO ()
+main = getArgs >>= parse
+
+-- * Helpers
 
 -- | Runs getter repeatedly on a input stream.
 conduitGet :: MonadThrow m => Get.Get b -> Conduit B.ByteString m b
@@ -63,43 +90,3 @@ data ParseError = ParseError
   } deriving (Show, Typeable)
 
 instance Exception ParseError
-
-client :: CN.AppData -> IO ()
-client a = CN.appSource a $$ consumeSingle
-                          =$ CL.mapM_ printHeader
-  where consumeSingle :: Conduit B8.ByteString IO (ITypes.UnitHeader ITCH.ITCHMessage)
-        consumeSingle = do
-          bsMaybe <- await
-          case bsMaybe of
-            (Just bs) -> case toMessage bs of
-                Left (remaining, _, errorMsg) -> do
-                  liftIO $ putStrLn errorMsg
-                  leftover $ LBS.toStrict remaining
-                Right (remaining, _, header) -> do
-                  liftIO $ printHeader header
-                  leftover $ LBS.toStrict remaining
-            _ -> return ()
-        toMessage = Get.runGetOrFail readITCH . LBS.fromStrict
-        printHeader header = do
-          putStrLn $ "Received: "
-          print header
-          putStrLn ""
-
-runClient :: String -> Int -> IO ()
-runClient hostname port = do
-    putStrLn $ "Going to connect to: " <> hostname <> ":" <> show port
-    CN.runTCPClient settings client
-  where settings = CN.clientSettings port (B8.pack hostname)
-
--- | Prints the usage information.
-usage :: IO ()
-usage = putStrLn "Usage: thebook-client [hostname] [port]"
-
-parse :: [String] -> IO ()
-parse [hostname, port] = case readMaybe port of
-  Nothing      -> putStrLn $ "Cannot parse the port: " <> port
-  Just portInt -> runClient hostname portInt
-parse _ = usage >> exitWith ExitSuccess
-
-main :: IO ()
-main = getArgs >>= parse
