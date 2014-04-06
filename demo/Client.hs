@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Client
@@ -11,24 +12,57 @@
 -----------------------------------------------------------------------------
 module Main where
 
-import           Control.Monad.IO.Class (liftIO)
-import qualified Data.Binary           as B
-import qualified Data.Binary.Get       as Get
-import qualified Data.ByteString.Char8 as B8
-import qualified Data.ByteString.Lazy  as LBS
+import           Control.Exception            (Exception)
+import           Control.Monad.IO.Class       (liftIO)
+import           Control.Monad.Trans.Resource (MonadThrow, monadThrow)
+import qualified Data.Binary                  as B
+import qualified Data.Binary.Get              as Get
+import qualified Data.ByteString              as B
+import qualified Data.ByteString.Char8        as B8
+import qualified Data.ByteString.Lazy         as LBS
 import           Data.Conduit
-import qualified Data.Conduit.List     as CL
-import qualified Data.Conduit.Network  as CN (AppData, appSource,
-                                              clientSettings, runTCPClient)
-import qualified Data.ITCH.ITCH51      as ITCH
-import qualified Data.ITCH.Types       as ITypes
-import           Data.Monoid           ((<>))
-import           System.Environment    (getArgs)
-import           System.Exit           (ExitCode (..), exitWith)
-import           Text.Read             (readMaybe)
+import qualified Data.Conduit.List            as CL
+import qualified Data.Conduit.Network         as CN (AppData, appSource,
+                                                     clientSettings,
+                                                     runTCPClient)
+import qualified Data.ITCH.ITCH51             as ITCH
+import qualified Data.ITCH.Types              as ITypes
+import           Data.Monoid                  ((<>))
+import           Data.Typeable                (Typeable)
+import           System.Environment           (getArgs)
+import           System.Exit                  (ExitCode (..), exitWith)
+import           Text.Read                    (readMaybe)
 
 readITCH :: B.Get (ITypes.UnitHeader ITCH.ITCHMessage)
 readITCH = ITypes.readMessages
+
+-- | Runs getter repeatedly on a input stream.
+conduitGet :: MonadThrow m => Get.Get b -> Conduit B.ByteString m b
+conduitGet g = start
+  where
+    start = do mx <- await
+               case mx of
+                  Nothing -> return ()
+                  Just x -> go (Get.runGetIncremental g `Get.pushChunk` x)
+    go (Get.Done bs _ v) = do yield v
+                              if B.null bs
+                                then start
+                                else go (Get.runGetIncremental g `Get.pushChunk` bs)
+    go (Get.Fail u o e)  = monadThrow (ParseError u o e)
+    go (Get.Partial n)   = await >>= (go . n)
+
+data ParseError = ParseError
+  { -- | Data left unconsumed in single stream input value.
+    unconsumed :: B.ByteString
+
+    -- | Number of bytes consumed from single stream input value.
+  , offset     :: Get.ByteOffset
+
+    -- | Error content.
+  , content    :: String
+  } deriving (Show, Typeable)
+
+instance Exception ParseError
 
 client :: CN.AppData -> IO ()
 client a = CN.appSource a $$ consumeSingle
