@@ -11,6 +11,7 @@
 -----------------------------------------------------------------------------
 module Main where
 
+import           Control.Monad.IO.Class (liftIO)
 import qualified Data.Binary           as B
 import qualified Data.Binary.Get       as Get
 import qualified Data.ByteString.Char8 as B8
@@ -30,9 +31,21 @@ readITCH :: B.Get (ITypes.UnitHeader ITCH.ITCHMessage)
 readITCH = ITypes.readMessages
 
 client :: CN.AppData -> IO ()
-client a = CN.appSource a $$ CL.map toMessage
+client a = CN.appSource a $$ consumeSingle
                           =$ CL.mapM_ printHeader
-  where toMessage = Get.runGetOrFail readITCH . LBS.fromStrict
+  where consumeSingle :: Conduit B8.ByteString IO (ITypes.UnitHeader ITCH.ITCHMessage)
+        consumeSingle = do
+          bsMaybe <- await
+          case bsMaybe of
+            (Just bs) -> case toMessage bs of
+                Left (remaining, _, errorMsg) -> do
+                  liftIO $ putStrLn errorMsg
+                  leftover $ LBS.toStrict remaining
+                Right (remaining, _, header) -> do
+                  liftIO $ printHeader header
+                  leftover $ LBS.toStrict remaining
+            _ -> return ()
+        toMessage = Get.runGetOrFail readITCH . LBS.fromStrict
         printHeader header = do
           putStrLn $ "Received: "
           print header
