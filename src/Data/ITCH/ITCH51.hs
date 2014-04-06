@@ -1,10 +1,8 @@
 module Data.ITCH.ITCH51 (ITCHMessage(..)) where
-import qualified Data.ITCH.Types as Data.ITCH.Types
+import qualified Data.ITCH.Types
 import Test.QuickCheck.Arbitrary
 import Test.QuickCheck.Gen
 import Data.Binary
-import Data.Binary.Put
-import Data.Binary.Get
 import Control.Applicative
  
 getAddOrder :: Get ITCHMessage
@@ -360,7 +358,7 @@ instance Binary ITCHMessage where
                     ((*>) (put (_snapshotRequestSequenceNumber msg))
                        (Data.ITCH.Types.putAlpha 6 (_snapshotRequestSegment msg)))
                     (put (_snapshotRequestLSEInstrumentID msg))))
-        put msg@LogoutRequest{}
+        put LogoutRequest{}
           = (*>) (Data.ITCH.Types.putMessageLength 2)
               ((*>) (Data.ITCH.Types.putMessageType 5) (return ()))
         put msg@LoginResponse{}
@@ -579,7 +577,6 @@ instance Binary ITCHMessage where
                        (Data.ITCH.Types.putAlpha 1
                           (_statisticsOpenClosePriceIndicator msg)))
                     (put (_statisticsFlags msg))))
-        put _ = fail "Unknown msg type"
  
 instance Arbitrary ITCHMessage where
         arbitrary
@@ -810,196 +807,196 @@ data ITCHMessage = AddOrder{_addOrderNanosecond ::
                               _statisticsFlags :: {-# UNPACK #-} !Data.ITCH.Types.BitField}
                  deriving (Show, Eq)
  
-addOrder ::
-         Data.ITCH.Types.UInt32 ->
-           Data.ITCH.Types.UInt64 ->
-             Data.ITCH.Types.Byte ->
-               Data.ITCH.Types.UInt32 ->
-                 Data.ITCH.Types.UInt32 ->
-                   Data.ITCH.Types.Byte ->
-                     Data.ITCH.Types.Byte ->
-                       Data.ITCH.Types.Price -> Data.ITCH.Types.BitField -> ITCHMessage
-addOrder = AddOrder
- 
-addAttributedOrder ::
-                   Data.ITCH.Types.UInt32 ->
-                     Data.ITCH.Types.UInt64 ->
-                       Data.ITCH.Types.Byte ->
-                         Data.ITCH.Types.UInt32 ->
-                           Data.ITCH.Types.UInt32 ->
-                             Data.ITCH.Types.Byte ->
-                               Data.ITCH.Types.Byte ->
-                                 Data.ITCH.Types.Price ->
-                                   Data.ITCH.Types.Alpha -> Data.ITCH.Types.BitField -> ITCHMessage
-addAttributedOrder = AddAttributedOrder
- 
-orderDeleted ::
-             Data.ITCH.Types.UInt32 ->
-               Data.ITCH.Types.UInt64 -> Data.ITCH.Types.BitField -> ITCHMessage
-orderDeleted = OrderDeleted
- 
-orderModified ::
-              Data.ITCH.Types.UInt32 ->
-                Data.ITCH.Types.UInt64 ->
-                  Data.ITCH.Types.UInt32 ->
-                    Data.ITCH.Types.Price -> Data.ITCH.Types.BitField -> ITCHMessage
-orderModified = OrderModified
- 
-orderBookClear ::
-               Data.ITCH.Types.UInt32 ->
-                 Data.ITCH.Types.UInt32 ->
-                   Data.ITCH.Types.Byte ->
-                     Data.ITCH.Types.Byte -> Data.ITCH.Types.BitField -> ITCHMessage
-orderBookClear = OrderBookClear
- 
-time :: Data.ITCH.Types.UInt32 -> ITCHMessage
-time = Time
- 
-loginRequest ::
-             Data.ITCH.Types.Alpha -> Data.ITCH.Types.Alpha -> ITCHMessage
-loginRequest = LoginRequest
- 
-replayRequest ::
+_addOrder ::
+          Data.ITCH.Types.UInt32 ->
+            Data.ITCH.Types.UInt64 ->
               Data.ITCH.Types.Byte ->
-                Data.ITCH.Types.UInt32 -> Data.ITCH.Types.UInt8 -> ITCHMessage
-replayRequest = ReplayRequest
- 
-snapshotRequest ::
-                Data.ITCH.Types.UInt32 ->
-                  Data.ITCH.Types.Alpha -> Data.ITCH.Types.UInt32 -> ITCHMessage
-snapshotRequest = SnapshotRequest
- 
-logoutRequest :: ITCHMessage
-logoutRequest = LogoutRequest
- 
-loginResponse :: Data.ITCH.Types.Byte -> ITCHMessage
-loginResponse = LoginResponse
- 
-replayResponse ::
-               Data.ITCH.Types.Byte ->
-                 Data.ITCH.Types.UInt32 ->
-                   Data.ITCH.Types.UInt8 -> Data.ITCH.Types.Byte -> ITCHMessage
-replayResponse = ReplayResponse
- 
-snapshotResponse ::
-                 Data.ITCH.Types.UInt32 ->
-                   Data.ITCH.Types.UInt32 -> Data.ITCH.Types.Byte -> ITCHMessage
-snapshotResponse = SnapshotResponse
- 
-snapshotComplete ::
-                 Data.ITCH.Types.UInt32 ->
-                   Data.ITCH.Types.Alpha ->
-                     Data.ITCH.Types.UInt32 -> Data.ITCH.Types.BitField -> ITCHMessage
-snapshotComplete = SnapshotComplete
- 
-systemEvent ::
-            Data.ITCH.Types.UInt32 -> Data.ITCH.Types.Byte -> ITCHMessage
-systemEvent = SystemEvent
- 
-symbolDirectory ::
                 Data.ITCH.Types.UInt32 ->
                   Data.ITCH.Types.UInt32 ->
                     Data.ITCH.Types.Byte ->
                       Data.ITCH.Types.Byte ->
-                        Data.ITCH.Types.Alpha ->
-                          Data.ITCH.Types.Alpha ->
-                            Data.ITCH.Types.Alpha ->
-                              Data.ITCH.Types.Alpha ->
-                                Data.ITCH.Types.Alpha ->
-                                  Data.ITCH.Types.Alpha ->
-                                    Data.ITCH.Types.Byte ->
-                                      Data.ITCH.Types.Alpha -> Data.ITCH.Types.Price -> ITCHMessage
-symbolDirectory = SymbolDirectory
+                        Data.ITCH.Types.Price -> Data.ITCH.Types.BitField -> ITCHMessage
+_addOrder = AddOrder
  
-symbolStatus ::
-             Data.ITCH.Types.UInt32 ->
-               Data.ITCH.Types.UInt32 ->
-                 Data.ITCH.Types.Byte ->
-                   Data.ITCH.Types.Byte ->
-                     Data.ITCH.Types.Byte ->
-                       Data.ITCH.Types.BitField ->
-                         Data.ITCH.Types.Alpha ->
-                           Data.ITCH.Types.UInt8 ->
-                             Data.ITCH.Types.Time -> Data.ITCH.Types.UInt8 -> ITCHMessage
-symbolStatus = SymbolStatus
+_addAttributedOrder ::
+                    Data.ITCH.Types.UInt32 ->
+                      Data.ITCH.Types.UInt64 ->
+                        Data.ITCH.Types.Byte ->
+                          Data.ITCH.Types.UInt32 ->
+                            Data.ITCH.Types.UInt32 ->
+                              Data.ITCH.Types.Byte ->
+                                Data.ITCH.Types.Byte ->
+                                  Data.ITCH.Types.Price ->
+                                    Data.ITCH.Types.Alpha -> Data.ITCH.Types.BitField -> ITCHMessage
+_addAttributedOrder = AddAttributedOrder
  
-orderExecuted ::
+_orderDeleted ::
               Data.ITCH.Types.UInt32 ->
-                Data.ITCH.Types.UInt64 ->
-                  Data.ITCH.Types.UInt32 -> Data.ITCH.Types.UInt64 -> ITCHMessage
-orderExecuted = OrderExecuted
+                Data.ITCH.Types.UInt64 -> Data.ITCH.Types.BitField -> ITCHMessage
+_orderDeleted = OrderDeleted
  
-orderExecutedWithPrice ::
-                       Data.ITCH.Types.UInt32 ->
-                         Data.ITCH.Types.UInt64 ->
-                           Data.ITCH.Types.UInt32 ->
-                             Data.ITCH.Types.UInt32 ->
-                               Data.ITCH.Types.UInt64 ->
-                                 Data.ITCH.Types.Byte -> Data.ITCH.Types.Price -> ITCHMessage
-orderExecutedWithPrice = OrderExecutedWithPrice
- 
-trade ::
-      Data.ITCH.Types.UInt32 ->
-        Data.ITCH.Types.UInt32 ->
-          Data.ITCH.Types.UInt32 ->
-            Data.ITCH.Types.Byte ->
-              Data.ITCH.Types.Byte ->
-                Data.ITCH.Types.Price ->
-                  Data.ITCH.Types.UInt64 -> Data.ITCH.Types.Byte -> ITCHMessage
-trade = Trade
- 
-auctionTrade ::
-             Data.ITCH.Types.UInt32 ->
+_orderModified ::
                Data.ITCH.Types.UInt32 ->
+                 Data.ITCH.Types.UInt64 ->
+                   Data.ITCH.Types.UInt32 ->
+                     Data.ITCH.Types.Price -> Data.ITCH.Types.BitField -> ITCHMessage
+_orderModified = OrderModified
+ 
+_orderBookClear ::
+                Data.ITCH.Types.UInt32 ->
+                  Data.ITCH.Types.UInt32 ->
+                    Data.ITCH.Types.Byte ->
+                      Data.ITCH.Types.Byte -> Data.ITCH.Types.BitField -> ITCHMessage
+_orderBookClear = OrderBookClear
+ 
+_time :: Data.ITCH.Types.UInt32 -> ITCHMessage
+_time = Time
+ 
+_loginRequest ::
+              Data.ITCH.Types.Alpha -> Data.ITCH.Types.Alpha -> ITCHMessage
+_loginRequest = LoginRequest
+ 
+_replayRequest ::
+               Data.ITCH.Types.Byte ->
+                 Data.ITCH.Types.UInt32 -> Data.ITCH.Types.UInt8 -> ITCHMessage
+_replayRequest = ReplayRequest
+ 
+_snapshotRequest ::
                  Data.ITCH.Types.UInt32 ->
-                   Data.ITCH.Types.Byte ->
+                   Data.ITCH.Types.Alpha -> Data.ITCH.Types.UInt32 -> ITCHMessage
+_snapshotRequest = SnapshotRequest
+ 
+_logoutRequest :: ITCHMessage
+_logoutRequest = LogoutRequest
+ 
+_loginResponse :: Data.ITCH.Types.Byte -> ITCHMessage
+_loginResponse = LoginResponse
+ 
+_replayResponse ::
+                Data.ITCH.Types.Byte ->
+                  Data.ITCH.Types.UInt32 ->
+                    Data.ITCH.Types.UInt8 -> Data.ITCH.Types.Byte -> ITCHMessage
+_replayResponse = ReplayResponse
+ 
+_snapshotResponse ::
+                  Data.ITCH.Types.UInt32 ->
+                    Data.ITCH.Types.UInt32 -> Data.ITCH.Types.Byte -> ITCHMessage
+_snapshotResponse = SnapshotResponse
+ 
+_snapshotComplete ::
+                  Data.ITCH.Types.UInt32 ->
+                    Data.ITCH.Types.Alpha ->
+                      Data.ITCH.Types.UInt32 -> Data.ITCH.Types.BitField -> ITCHMessage
+_snapshotComplete = SnapshotComplete
+ 
+_systemEvent ::
+             Data.ITCH.Types.UInt32 -> Data.ITCH.Types.Byte -> ITCHMessage
+_systemEvent = SystemEvent
+ 
+_symbolDirectory ::
+                 Data.ITCH.Types.UInt32 ->
+                   Data.ITCH.Types.UInt32 ->
                      Data.ITCH.Types.Byte ->
-                       Data.ITCH.Types.Price ->
-                         Data.ITCH.Types.UInt64 -> Data.ITCH.Types.Byte -> ITCHMessage
-auctionTrade = AuctionTrade
+                       Data.ITCH.Types.Byte ->
+                         Data.ITCH.Types.Alpha ->
+                           Data.ITCH.Types.Alpha ->
+                             Data.ITCH.Types.Alpha ->
+                               Data.ITCH.Types.Alpha ->
+                                 Data.ITCH.Types.Alpha ->
+                                   Data.ITCH.Types.Alpha ->
+                                     Data.ITCH.Types.Byte ->
+                                       Data.ITCH.Types.Alpha -> Data.ITCH.Types.Price -> ITCHMessage
+_symbolDirectory = SymbolDirectory
  
-tradeBreak ::
-           Data.ITCH.Types.UInt32 ->
-             Data.ITCH.Types.UInt64 -> Data.ITCH.Types.Byte -> ITCHMessage
-tradeBreak = TradeBreak
- 
-auctionInfo ::
-            Data.ITCH.Types.UInt32 ->
+_symbolStatus ::
               Data.ITCH.Types.UInt32 ->
                 Data.ITCH.Types.UInt32 ->
                   Data.ITCH.Types.Byte ->
-                    Data.ITCH.Types.UInt32 ->
+                    Data.ITCH.Types.Byte ->
                       Data.ITCH.Types.Byte ->
-                        Data.ITCH.Types.Byte ->
-                          Data.ITCH.Types.Price -> Data.ITCH.Types.Byte -> ITCHMessage
-auctionInfo = AuctionInfo
+                        Data.ITCH.Types.BitField ->
+                          Data.ITCH.Types.Alpha ->
+                            Data.ITCH.Types.UInt8 ->
+                              Data.ITCH.Types.Time -> Data.ITCH.Types.UInt8 -> ITCHMessage
+_symbolStatus = SymbolStatus
  
-offBookTrade ::
+_orderExecuted ::
+               Data.ITCH.Types.UInt32 ->
+                 Data.ITCH.Types.UInt64 ->
+                   Data.ITCH.Types.UInt32 -> Data.ITCH.Types.UInt64 -> ITCHMessage
+_orderExecuted = OrderExecuted
+ 
+_orderExecutedWithPrice ::
+                        Data.ITCH.Types.UInt32 ->
+                          Data.ITCH.Types.UInt64 ->
+                            Data.ITCH.Types.UInt32 ->
+                              Data.ITCH.Types.UInt32 ->
+                                Data.ITCH.Types.UInt64 ->
+                                  Data.ITCH.Types.Byte -> Data.ITCH.Types.Price -> ITCHMessage
+_orderExecutedWithPrice = OrderExecutedWithPrice
+ 
+_trade ::
+       Data.ITCH.Types.UInt32 ->
+         Data.ITCH.Types.UInt32 ->
+           Data.ITCH.Types.UInt32 ->
+             Data.ITCH.Types.Byte ->
+               Data.ITCH.Types.Byte ->
+                 Data.ITCH.Types.Price ->
+                   Data.ITCH.Types.UInt64 -> Data.ITCH.Types.Byte -> ITCHMessage
+_trade = Trade
+ 
+_auctionTrade ::
+              Data.ITCH.Types.UInt32 ->
+                Data.ITCH.Types.UInt32 ->
+                  Data.ITCH.Types.UInt32 ->
+                    Data.ITCH.Types.Byte ->
+                      Data.ITCH.Types.Byte ->
+                        Data.ITCH.Types.Price ->
+                          Data.ITCH.Types.UInt64 -> Data.ITCH.Types.Byte -> ITCHMessage
+_auctionTrade = AuctionTrade
+ 
+_tradeBreak ::
+            Data.ITCH.Types.UInt32 ->
+              Data.ITCH.Types.UInt64 -> Data.ITCH.Types.Byte -> ITCHMessage
+_tradeBreak = TradeBreak
+ 
+_auctionInfo ::
              Data.ITCH.Types.UInt32 ->
                Data.ITCH.Types.UInt32 ->
                  Data.ITCH.Types.UInt32 ->
                    Data.ITCH.Types.Byte ->
-                     Data.ITCH.Types.Byte ->
-                       Data.ITCH.Types.Price ->
-                         Data.ITCH.Types.UInt64 ->
-                           Data.ITCH.Types.Alpha ->
-                             Data.ITCH.Types.Time ->
-                               Data.ITCH.Types.Date ->
-                                 Data.ITCH.Types.Alpha ->
-                                   Data.ITCH.Types.Price ->
-                                     Data.ITCH.Types.Alpha ->
-                                       Data.ITCH.Types.BitField -> ITCHMessage
-offBookTrade = OffBookTrade
+                     Data.ITCH.Types.UInt32 ->
+                       Data.ITCH.Types.Byte ->
+                         Data.ITCH.Types.Byte ->
+                           Data.ITCH.Types.Price -> Data.ITCH.Types.Byte -> ITCHMessage
+_auctionInfo = AuctionInfo
  
-statistics ::
-           Data.ITCH.Types.UInt32 ->
-             Data.ITCH.Types.UInt32 ->
-               Data.ITCH.Types.Byte ->
-                 Data.ITCH.Types.Byte ->
-                   Data.ITCH.Types.Alpha ->
-                     Data.ITCH.Types.Price ->
-                       Data.ITCH.Types.Alpha -> Data.ITCH.Types.BitField -> ITCHMessage
-statistics = Statistics
+_offBookTrade ::
+              Data.ITCH.Types.UInt32 ->
+                Data.ITCH.Types.UInt32 ->
+                  Data.ITCH.Types.UInt32 ->
+                    Data.ITCH.Types.Byte ->
+                      Data.ITCH.Types.Byte ->
+                        Data.ITCH.Types.Price ->
+                          Data.ITCH.Types.UInt64 ->
+                            Data.ITCH.Types.Alpha ->
+                              Data.ITCH.Types.Time ->
+                                Data.ITCH.Types.Date ->
+                                  Data.ITCH.Types.Alpha ->
+                                    Data.ITCH.Types.Price ->
+                                      Data.ITCH.Types.Alpha ->
+                                        Data.ITCH.Types.BitField -> ITCHMessage
+_offBookTrade = OffBookTrade
+ 
+_statistics ::
+            Data.ITCH.Types.UInt32 ->
+              Data.ITCH.Types.UInt32 ->
+                Data.ITCH.Types.Byte ->
+                  Data.ITCH.Types.Byte ->
+                    Data.ITCH.Types.Alpha ->
+                      Data.ITCH.Types.Price ->
+                        Data.ITCH.Types.Alpha -> Data.ITCH.Types.BitField -> ITCHMessage
+_statistics = Statistics
  
 arbitraryAddOrder :: Gen ITCHMessage
 arbitraryAddOrder

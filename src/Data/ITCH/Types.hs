@@ -1,5 +1,4 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE RecordWildCards            #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.ITCH
@@ -85,7 +84,7 @@ padAlphaValue = ' '
 padAlpha :: Int -> BS8.ByteString -> BS8.ByteString
 padAlpha size alpha | BS8.length alpha > size = BS.take size alpha
 padAlpha size alpha | BS8.length alpha == size = alpha
-padAlpha size alpha | otherwise = BS.append alpha pad
+padAlpha size alpha = BS.append alpha pad
   where
   pad = BS8.replicate r padAlphaValue
   r   = size - BS.length alpha

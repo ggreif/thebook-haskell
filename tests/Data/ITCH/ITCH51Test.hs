@@ -53,16 +53,16 @@ deserialiseBlock :: L.ByteString -> [ITCH.ITCHMessage]
 deserialiseBlock bs = map (\(_, _, msg) -> msg) (rights (singleFold bs))
   where singleFold b
           | L.null b  = []
-          | otherwise = case (Get.runGetOrFail (B.get :: Get.Get ITCH.ITCHMessage) b) of
-                        l@(Left (remaining, _, _)) -> [l] ++ (singleFold remaining)
-                        r@(Right (remaining, _, _)) -> [r] ++ (singleFold remaining)
+          | otherwise = case Get.runGetOrFail (B.get :: Get.Get ITCH.ITCHMessage) b of
+                        l@(Left (remaining, _, _)) -> l : singleFold remaining
+                        r@(Right (remaining, _, _)) -> r : singleFold remaining
 
 serialiseDeserialiseBlockWithUnitHeader :: Types.Byte -> Types.UInt32 -> [ITCH.ITCHMessage] -> Bool
 serialiseDeserialiseBlockWithUnitHeader marketDataGroup seqNo msg =
   let serialised   = Types.writeMessages marketDataGroup seqNo msg
-      unitHeader   = (Get.runGet Types.readMessages serialised) :: Types.UnitHeader ITCH.ITCHMessage
+      unitHeader   = Get.runGet Types.readMessages serialised :: Types.UnitHeader ITCH.ITCHMessage
   in Types._unitHeaderPayload unitHeader == msg &&
-     Types._unitHeaderMessageCount unitHeader == (fromIntegral $ length msg) &&
+     Types._unitHeaderMessageCount unitHeader == fromIntegral (length msg) &&
      Types._unitHeaderMarketDataGroup unitHeader == marketDataGroup &&
      Types._unitHeaderSequenceNumber unitHeader == seqNo
 
@@ -71,6 +71,6 @@ serialiseDeserialiseBlockWithUnitHeader marketDataGroup seqNo msg =
 padMessage :: Int -> L.ByteString -> L.ByteString
 padMessage padding bs =
   let curLength = Get.runGet Types.getMessageLength bs
-      newLength = curLength + (fromIntegral padding)
+      newLength = curLength + fromIntegral padding
       paddingBs = L.replicate (fromIntegral padding) 0x00
   in (newLength `L.cons` (L.tail bs)) `L.append` paddingBs
