@@ -14,7 +14,6 @@ import qualified Data.TheBook.BookTest as BookTest
 import qualified Data.ITCH.TypesTest as TypesTest
 import qualified Data.ITCH.ITCH51Test as ITCH51Test
 import Test.Tasty as Tasty
-import Test.Tasty.QuickCheck as QC
 
 main :: IO ()
 main = Tasty.defaultMain tests
