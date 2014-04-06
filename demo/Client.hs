@@ -35,7 +35,9 @@ client a = CN.appSource a $$ CL.map toMessage
   where toMessage = Get.runGet readITCH . LBS.fromStrict
 
 runClient :: String -> Int -> IO ()
-runClient hostname port = CN.runTCPClient settings client
+runClient hostname port = do
+    putStrLn $ "Going to connect to: " <> hostname <> ":" <> show port
+    CN.runTCPClient settings client
   where settings = CN.clientSettings port (B8.pack hostname)
 
 -- | Prints the usage information.
