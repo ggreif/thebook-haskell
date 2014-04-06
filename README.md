@@ -6,7 +6,10 @@ thebook-haskell
 Exchange simulator in Haskell
 
 ## Done
-
+* Parser of ITCH.xml schemas that generates the records,
+  binary and arbitrary instances for the messages.
+* Stupid conduit demo where server pushes random 
+  ITCH messages and client prints those.
 
 ## TODO
 
