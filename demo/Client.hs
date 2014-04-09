@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE TemplateHaskell    #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Client
@@ -12,6 +13,7 @@
 -----------------------------------------------------------------------------
 module Main where
 
+import           Control.Applicative          (pure, (<$>), (<*>))
 import           Control.Exception            (Exception)
 import           Control.Monad.Trans.Resource (MonadThrow, monadThrow)
 import qualified Data.Binary                  as B
@@ -29,7 +31,16 @@ import           Data.Monoid                  ((<>))
 import           Data.Typeable                (Typeable)
 import           System.Environment           (getArgs)
 import           System.Exit                  (ExitCode (..), exitWith)
+import qualified System.IO                    as SIO
+import           System.Log.Formatter         (simpleLogFormatter)
+import           System.Log.Handler           (setFormatter)
+import           System.Log.Handler.Simple    (streamHandler)
+import qualified System.Log.Logger            as HSL
+import           System.Log.Logger.TH         (deriveLoggers)
 import           Text.Read                    (readMaybe)
+
+-- | Derive the loggers.
+$(deriveLoggers "HSL" [HSL.INFO])
 
 readITCH :: B.Get (ITypes.UnitHeader ITCH.ITCHMessage)
 readITCH = ITypes.readMessages
@@ -38,13 +49,11 @@ client :: CN.AppData -> IO ()
 client a = CN.appSource a $$ conduitGet readITCH
                           =$ CL.mapM_ printHeader
   where printHeader header = do
-          putStrLn $ "Received: "
-          print header
-          putStrLn ""
+          infoM $ "Received: " <> show header
 
 runClient :: String -> Int -> IO ()
 runClient hostname port = do
-    putStrLn $ "Going to connect to: " <> hostname <> ":" <> show port
+    infoM $ "Going to connect to: " <> hostname <> ":" <> show port
     CN.runTCPClient settings client
   where settings = CN.clientSettings port (B8.pack hostname)
 
@@ -59,7 +68,17 @@ parse [hostname, port] = case readMaybe port of
 parse _ = usage >> exitWith ExitSuccess
 
 main :: IO ()
-main = getArgs >>= parse
+main = do
+  -- set the logger level
+  HSL.updateGlobalLogger HSL.rootLoggerName (HSL.setLevel HSL.INFO)
+
+  -- set the log format
+  let format = simpleLogFormatter "$time $prio [$loggername] - $msg"
+  stdH <- setFormatter <$> streamHandler SIO.stdout HSL.INFO <*> pure format
+  HSL.updateGlobalLogger HSL.rootLoggerName (HSL.setHandlers [stdH])
+
+  -- run the client
+  getArgs >>= parse
 
 -- * Helpers
 

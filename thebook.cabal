@@ -81,6 +81,7 @@ executable thebook-demo-client
                      , time
                      , containers
                      , hslogger
+                     , hslogger-template
                      , conduit
                      , conduit-extra >= 1.1.0
                      , resourcet
@@ -103,6 +104,7 @@ executable thebook-demo-server
                      , time
                      , containers
                      , hslogger
+                     , hslogger-template
                      , conduit
                      , conduit-extra >= 1.1.0
                      , thebook
