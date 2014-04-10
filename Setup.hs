@@ -1,24 +1,53 @@
+{-# LANGUAGE NamedFieldPuns    #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Main where
+module Main (main) where
 
-import           Control.Applicative   (pure, (<$>), (<*>))
-import           Control.Concurrent    (threadDelay)
-import           Control.Monad         (void)
-import           Data.Char             (toLower)
-import           Data.Map              (Map)
-import qualified Data.Map              as M
-import           Data.Maybe            (catMaybes, mapMaybe)
-import           Data.Monoid           (Sum (..), mconcat, (<>))
-import           Data.String
-import           Data.Text             (Text)
-import qualified Data.Text             as T
-import           Data.Word             (Word8)
-import qualified Language.Haskell.Exts as Hs
-import           System.Environment    (getArgs)
-import           Text.Read             (readMaybe)
-import qualified Text.XML              as XML
-import           Text.XML.Cursor       (element, fromDocument, node, ($/), (&/),
-                                        (&|))
+import           Control.Applicative             (pure, (<$>), (<*>))
+import           Data.Char                       (toLower)
+import           Data.Map                        (Map)
+import qualified Data.Map                        as M
+import           Data.Maybe                      (catMaybes, mapMaybe)
+import           Data.Monoid                     (Sum (..), mconcat, (<>))
+import           Data.Text                       (Text)
+import qualified Data.Text                       as T
+import           Data.Word                       (Word8)
+import           Distribution.PackageDescription
+import           Distribution.Simple
+import           Distribution.Simple.Setup
+import           Filesystem.Path.CurrentOS       (decodeString)
+import qualified Language.Haskell.Exts           as Hs
+import           Text.Read                       (readMaybe)
+import qualified Text.XML                        as XML
+import           Text.XML.Cursor                 (element, fromDocument, node,
+                                                  ($/), (&/), (&|))
+
+-- | Location of ITCH xmls.
+itchXmlDir :: String
+itchXmlDir = "data"
+
+generateMessages
+  :: Args
+  -> BuildFlags
+  -> IO HookedBuildInfo
+generateMessages _ _ = do
+  let path = decodeString $ itchXmlDir <>  "/ITCH51.xml"
+      version = "51"
+  document <- XML.readFile XML.def path
+  let cursor = fromDocument document
+      -- Parse messages
+      messages = catMaybes $ cursor $/ element "msgs"
+                               &/ element "msg" &| (onElement parseMessage) . node
+      types = generateMessageModule version messages
+      ppr = Hs.prettyPrintStyleMode Hs.style Hs.defaultMode
+
+  putStr (ppr types)
+  return emptyHookedBuildInfo
+
+main :: IO ()
+main = do
+  defaultMainWithHooks simpleUserHooks {
+    preBuild = generateMessages
+  }
 
 -- * Datatypes
 
@@ -326,29 +355,4 @@ generateMessageModule version msgs = Hs.Module srcLoc modName pragmas warningTex
         importDecl name = Hs.ImportDecl srcLoc (Hs.ModuleName name) False False Nothing Nothing Nothing
         dataItchTypesImport = Hs.ImportDecl srcLoc (Hs.ModuleName "Data.ITCH.Types") True False Nothing Nothing Nothing
 
-main :: IO ()
-main = void $ do
-   args <- getArgs
-   if length args /= 2
-    then do
-      putStrLn "Usage: Main <Path-to-xml> <Version>"
-      return ()
-    else do
-      let path    = head args
-          version = args !! 1
-      -- Get the cursor
-      document <- XML.readFile XML.def (fromString path)
-      let cursor = fromDocument document
-
-          -- Parse messages
-          messages = catMaybes $ cursor $/ element "msgs"
-                               &/ element "msg" &| (onElement parseMessage) . node
-
-          types = generateMessageModule version messages
-          ppr = Hs.prettyPrintStyleMode Hs.style Hs.defaultMode
-
-      putStr (ppr types)
-      putStrLn "Hello1"
-      threadDelay (10 * 1000000) -- necessary, as otherwise haskell IDE will swallow the output
-      putStrLn "Hello2"
 

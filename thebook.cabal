@@ -12,7 +12,7 @@ author:             Jakub Kozlowski
 copyright:          2014 Jakub Kozlowski <mail@jakub-kozlowski.com>
 maintainer:         mail@jakub-kozlowski.com
 
-build-type:         Simple
+build-type:         Custom
 cabal-version:      >=1.9.2
 extra-source-files: LICENCE
                     README.md
@@ -112,18 +112,12 @@ executable thebook-demo-server
   hs-source-dirs:      demo
   ghc-options:         -Wall -fwarn-incomplete-patterns -rtsopts -threaded
 
-executable generate-itch
-  main-is:             Main.hs
-  build-depends:       base >= 4 && < 5
-                     , xml-conduit
-                     , filepath
-                     , text
-                     , bytestring
-                     , haskell-src-exts
-                     , containers
+-- executable generate-itch
+--  main-is:             Main.hs
+--  build-depends:       
 --  default-language:    Haskell2010
-  hs-source-dirs:      data
-  ghc-options:         -Wall -fwarn-incomplete-patterns -rtsopts -threaded
+--  hs-source-dirs:      data
+--  ghc-options:         -Wall -fwarn-incomplete-patterns -rtsopts -threaded
 
 test-suite thebook-tests
   main-is:            Data/TheBook/Test.hs
@@ -140,7 +134,17 @@ test-suite thebook-tests
                     , Cabal >= 1.9.2
                     , Decimal
                     , old-locale
---  default-language:   Haskell2010
+                    -- Codegen deps
+                    , directory
+                    , base >= 4 && < 5
+                    , xml-conduit
+                    , filepath
+                    , text
+                    , bytestring
+                    , haskell-src-exts
+                    , containers
+                    , filepath
+                    , system-filepath
   Ghc-Options:        -Wall -O2 -fhpc -hpcdir dist/hpc/mix/thebook-tests
   hs-source-dirs:     src, tests
 
