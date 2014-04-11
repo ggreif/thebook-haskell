@@ -1,20 +1,24 @@
-thebook-haskell
-===============
+thebook-haskell - Electronic order book in Haskell.
+===================================================
+
 [![Build Status](https://travis-ci.org/jkozlowski/thebook-haskell.png?branch=master)](https://travis-ci.org/jkozlowski/thebook-haskell)
 [![Coverage Status](http://coveralls.io/repos/jkozlowski/thebook-haskell/badge.png?branch=master)](http://coveralls.io/r/jkozlowski/thebook-haskell?branch=master)
 
-Exchange simulator in Haskell
+The overriding goal of this project is to (eventually) create a (near) clone of the [LSE SETS](http://www.londonstockexchange.com/products-and-services/trading-services/sets/sets.htm) system. The project is progressing slowly but hopefully some day it will actually be useable.
 
 ## Done
+
 * Parser of ITCH.xml schemas that generates the records,
-  binary and arbitrary instances for the messages.
+  binary and arbitrary instances for the messages (almost as part of the build).
 * Stupid conduit demo where server pushes random 
   ITCH messages and client prints those.
 
-## TODO
+## Goals and TODOs
 
 ### General features
 * Networking (FIX in/OUCH or ITCH out)
+* Separate business logic (model of order book) from the side-effecting bits.
+* Separate market data distribution engine.
 * Admin commands (create market, clear order book)
 
 ### Order types
