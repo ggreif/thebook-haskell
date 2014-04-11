@@ -23,14 +23,15 @@ import           Text.XML.Cursor                 (element, fromDocument, node,
 
 -- | Location of ITCH xmls.
 itchXmlDir :: String
-itchXmlDir = "data"
+itchXmlDir = "generated"
 
+-- | Generates the haskell code, for now the xml path is hardcoded.
 generateMessages
   :: Args
   -> BuildFlags
   -> IO HookedBuildInfo
 generateMessages _ _ = do
-  let path = decodeString $ itchXmlDir <>  "/ITCH51.xml"
+  let path = decodeString "ITCH51.xml"
       version = "51"
   document <- XML.readFile XML.def path
   let cursor = fromDocument document
@@ -40,7 +41,10 @@ generateMessages _ _ = do
       types = generateMessageModule version messages
       ppr = Hs.prettyPrintStyleMode Hs.style Hs.defaultMode
 
-  putStr (ppr types)
+  putStrLn "Generating"
+
+  -- Don't bother creating the dirs
+  writeFile (itchXmlDir <> "/Data/ITCH/ITCH51.hs") (ppr types)
   return emptyHookedBuildInfo
 
 main :: IO ()
