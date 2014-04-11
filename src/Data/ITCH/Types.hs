@@ -7,7 +7,7 @@
 --
 -- Maintainer  :  mail@jakub-kozlowski.com
 --
--- This module types used in ITCH messages and their serialisers,
+-- This module specifies types used in ITCH messages and their serialisers,
 -- as per the specs at
 -- <http://www.londonstockexchange.com/products-and-services/millennium-exchange/technicalinformation/technicalinformation.htm>,
 -- specifically:
