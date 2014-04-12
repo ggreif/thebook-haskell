@@ -4,10 +4,9 @@ CABALSANDBOX := ".cabal-sandbox"
 
 all: install format hpc bench haddock run
 
-bench:
-	cabal configure --enable-benchmarks
+bench: install
 	cabal build
-	cabal bench
+	cabal bench --benchmark-options="-o report.html"
 
 clean:
 	cabal clean
@@ -27,8 +26,6 @@ haddock:
 hpc: test
 	hpc report dist/hpc/tix/hspec/hspec.tix
 	hpc markup --destdir=tmp dist/hpc/tix/hspec/hspec.tix
-	# tmp/hpc_index.html
-
 init:
 	cabal update
 	cabal sandbox init

@@ -167,5 +167,16 @@ benchmark thebook-bench
   build-depends:      base
                     , criterion
                     , random
+                      -- Codegen deps
+                    , directory
+                    , base >= 4 && < 5
+                    , xml-conduit
+                    , filepath
+                    , text
+                    , bytestring
+                    , haskell-src-exts
+                    , containers
+                    , filepath
+                    , system-filepath
   ghc-options:       -Wall
                      -O2
