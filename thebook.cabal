@@ -28,103 +28,113 @@ flag documentation
       False
 
 library
-  exposed-modules:     Data.ITCH.Types
-                     , Data.ITCH.ITCH51
-                     , Data.TheBook.MarketData
-                     , Data.TheBook.OUCH
-                     , Data.TheBook.Order
-                     , Data.TheBook.Types
-                     , Data.TheBook.Book
-  default-language:    Haskell2010
-  build-depends:       base >= 4 && < 5
-                     , mtl
-                     , bytestring >= 0.10
-                     , text
-                     , time
-                     , containers
-                     , binary >= 0.6.3
-                     , lens
-                     , QuickCheck == 2.6.*
-                     , Decimal
-                     , old-locale
+  exposed-modules:    Data.ITCH.Types
+                    , Data.ITCH.ITCH51
+                    , Data.TheBook.MarketData
+                    , Data.TheBook.OUCH
+                    , Data.TheBook.Order
+                    , Data.TheBook.Types
+                    , Data.TheBook.Book
+  default-language:   Haskell2010
+  build-depends:      base >= 4 && < 5
+                    , mtl
+                    , bytestring >= 0.10
+                    , text
+                    , time
+                    , containers
+                    , binary >= 0.6.3
+                    , lens
+                    , QuickCheck == 2.6.*
+                    , Decimal
+                    , old-locale
                        -- Codegen deps
-                     , directory
-                     , base >= 4 && < 5
-                     , xml-conduit
-                     , filepath
-                     , text
-                     , bytestring
-                     , haskell-src-exts
-                     , containers
-                     , filepath
-                     , system-filepath
-  hs-source-dirs:      src, generated
-  ghc-options:         -Wall -fwarn-incomplete-patterns
+                    , directory
+                    , base >= 4 && < 5
+                    , xml-conduit
+                    , filepath
+                    , text
+                    , bytestring
+                    , haskell-src-exts
+                    , containers
+                    , filepath
+                    , system-filepath
+  hs-source-dirs:     src
+                    , generated
+  ghc-options:       -Wall 
+                     -fwarn-incomplete-patterns
 
 executable thebook
-  main-is:             Data/TheBook/Main.hs
-  build-depends:       base >= 4 && < 5
-                     , mtl
-                     , stm
-                     , random
-                     , bytestring
-                     , text
-                     , time
-                     , containers
-                     , hslogger
-                     , thebook
-                     , QuickCheck == 2.6.*
---  default-language:    Haskell2010
-  hs-source-dirs:      src
-  ghc-options:         -Wall -fwarn-incomplete-patterns -rtsopts -threaded
+  main-is:            Main.hs
+  build-depends:      base >= 4 && < 5
+                    , mtl
+                    , stm
+                    , random
+                    , bytestring
+                    , text
+                    , time
+                    , containers
+                    , hslogger
+                    , thebook
+                    , QuickCheck == 2.6.*
+  default-language:   Haskell2010
+  hs-source-dirs:     src
+  ghc-options:       -Wall 
+                     -O2 
+                     -fwarn-incomplete-patterns
+                     -rtsopts 
+                     -threaded
 
 executable thebook-demo-client
-  main-is:             Client.hs
-  build-depends:       base >= 4 && < 5
-                     , mtl
-                     , transformers
-                     , stm
-                     , binary
-                     , random
-                     , network
-                     , bytestring
-                     , text
-                     , time
-                     , containers
-                     , hslogger
-                     , hslogger-template
-                     , conduit
-                     , conduit-extra >= 1.1.0
-                     , resourcet
-                     , thebook
-                     , QuickCheck == 2.6.*
-  hs-source-dirs:      demo
-  ghc-options:         -Wall -fwarn-incomplete-patterns -rtsopts -threaded
+  main-is:            Client.hs
+  build-depends:      base >= 4 && < 5
+                    , mtl
+                    , transformers
+                    , stm
+                    , binary
+                    , random
+                    , network
+                    , bytestring
+                    , text
+                    , time
+                    , containers
+                    , hslogger
+                    , hslogger-template
+                    , conduit
+                    , conduit-extra >= 1.1.0
+                    , resourcet
+                    , thebook
+                    , QuickCheck == 2.6.*
+  hs-source-dirs:     demo
+  ghc-options:       -Wall -O2 -fwarn-incomplete-patterns -rtsopts -threaded
 
 executable thebook-demo-server
-  main-is:             Server.hs
-  build-depends:       base >= 4 && < 5
-                     , mtl
-                     , transformers
-                     , stm
-                     , random
-                     , binary
-                     , bytestring
-                     , text
-                     , network
-                     , time
-                     , containers
-                     , hslogger
-                     , hslogger-template
-                     , conduit
-                     , conduit-extra >= 1.1.0
-                     , thebook
-                     , QuickCheck == 2.6.*
+  main-is:            Server.hs
+  build-depends:      base >= 4 && < 5
+                    , mtl
+                    , transformers
+                    , stm
+                    , random
+                    , binary
+                    , bytestring
+                    , text
+                    , network
+                    , time
+                    , containers
+                    , hslogger
+                    , hslogger-template
+                    , conduit
+                    , conduit-extra >= 1.1.0
+                    , thebook
+                    , QuickCheck == 2.6.*
   hs-source-dirs:      demo
-  ghc-options:         -Wall -fwarn-incomplete-patterns -rtsopts -threaded
+  ghc-options:       -Wall 
+                     -O2 
+                     -fwarn-incomplete-patterns 
+                     -rtsopts 
+                     -threaded
 
 test-suite thebook-tests
-  main-is:            Data/TheBook/Test.hs
+  main-is:            Test.hs
   type:               exitcode-stdio-1.0
   build-depends:      base
                     , bytestring
@@ -139,7 +149,23 @@ test-suite thebook-tests
                     , Decimal
                     , old-locale
 
-  Ghc-Options:        -Wall -O2 -fhpc -hpcdir dist/hpc/mix/thebook-tests
-  hs-source-dirs:     src, generated, tests
+  Ghc-Options:       -Wall 
+                     -O0 
+                     -fhpc 
+                     -hpcdir 
+                      dist/hpc/mix/thebook-tests
+  hs-source-dirs:     src 
+                    , generated
+                    , tests
 
-
+benchmark thebook-bench
+  type:               exitcode-stdio-1.0
+  hs-source-dirs:     src
+                    , generated
+                    , bench
+  main-is:            Benchmark.hs
+  build-depends:      base
+                    , criterion
+                    , random
+  ghc-options:       -Wall
+                     -O2

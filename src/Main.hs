@@ -1,21 +1,21 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Data.TheBook.TheBook
+-- Module      :  Main
 -- Copyright   :  (c) 2013, Jakub Dominik Kozlowski
 -- License     :  MIT
 --
 -- Maintainer  :  mail@jakub-kozlowski.com
 --
--- Exchange simulator in Haskell.
+-- Electronic order book in Haskell.
 -----------------------------------------------------------------------------
 module Main (
    module Types
  , main
  ) where
 
-import Data.TheBook.Types as Types
-import Data.TheBook.Book as Book
-import System.Exit
+import           Data.TheBook.Book  as Book
+import           Data.TheBook.Types as Types
+import           System.Exit
 
 -- 51 = [100, 100, 50]
 -- 50 = [50]
