@@ -13,7 +13,7 @@ script:
   - cabal build
   - run-cabal-test --show-details=always
   - hpc-coveralls thebook-tests --exclude-dir=test,bench
-  - cabal configure --enable-benchmarks
+  - cabal configure --enable-tests --enable-benchmarks
   - cabal build
   - cabal bench --benchmark-options="-o benchmarks/index.html"
 
