@@ -1,9 +1,5 @@
 language: haskell
 
-env:
-  global:
-  - secure: "BACqILhpDMHms4OZglwPVO7T1fkFWipTEpf8fZ9QLooPcczCfxOd/p+e8W1TplcsT0xYF7B/SRcRZuhrBl5olOmzXVeH+nqB+572+b3Xl7xg1KZrbW/hQa9+HVLS8jzPpcm+9AcCkN67OTpEKetcIGj6t9yYiJQJZKsLxl4PVB4="
-
 before_install:
   - cabal install hpc-coveralls
   - sudo apt-get -q -y install hlint || cabal install hlint
@@ -12,19 +8,6 @@ script:
   - cabal configure --enable-tests --enable-library-coverage
   - cabal build
   - run-cabal-test --show-details=always
-  - hpc-coveralls thebook-tests --exclude-dir=test,bench
-  - cabal configure --enable-tests --enable-benchmarks
-  - cabal build
-  - cabal bench --benchmark-options="-o benchmarks/index.html"
 
 after_script:
-  - git remote set-url --push origin git@github.com:jkozlowski/thebook-haskell.git
-  - git config user.name '#{ENV['GIT_NAME']}'
-  - git config user.email '#{ENV['GIT_EMAIL']}'
-  - git config credential.helper "store --file=.git/credentials"
-  - echo "https://#{ENV['GH_TOKEN']}:@github.com" > .git/credentials
-  - git checkout -b gh-pages origin/gh-pages
-  - git add benchmarks/index.html
-  - git commit -m "Update benchmarks"
-  - git push origin gh-pages
-  - rm .git/credentials
+  - hpc-coveralls thebook-tests --exclude-dir=test,bench
