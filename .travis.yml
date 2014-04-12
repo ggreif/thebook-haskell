@@ -10,4 +10,4 @@ script:
   - run-cabal-test --show-details=always
 
 after_script:
-  - hpc-coveralls --exclude-dir=test thebook-tests
+  - hpc-coveralls thebook-tests
