@@ -11,6 +11,7 @@ import           Data.Monoid                     (Sum (..), mconcat, (<>))
 import           Data.Text                       (Text)
 import qualified Data.Text                       as T
 import           Data.Word                       (Word8)
+import           Distribution.ModuleName         (fromString)
 import           Distribution.PackageDescription
 import           Distribution.Simple
 import           Distribution.Simple.Setup
@@ -20,6 +21,108 @@ import           Text.Read                       (readMaybe)
 import qualified Text.XML                        as XML
 import           Text.XML.Cursor                 (element, fromDocument, node,
                                                   ($/), (&/), (&|))
+
+-- | thebook.cabal - defined here programatically,
+-- as otherwise defining all the dependencies multiple times
+-- is tedious.
+
+ver :: [Int] -> Version
+ver version
+  = Version { versionBranch = version
+            , versionTags = []
+            }
+
+anyV :: String -> Dependency
+anyV name = Dependency (PackageName name) anyVersion
+
+within :: String -> [Int] -> Dependency
+within name verI = Dependency (PackageName name) (withinVersion $ ver verI)
+
+exactly :: String -> [Int] -> Dependency
+exactly name versionInts = Dependency (PackageName name) (thisVersion version)
+  where version = Version { versionBranch = versionInts
+                          , versionTags = []
+                          }
+
+orLater :: String -> [Int] -> Dependency
+orLater name verI = Dependency (PackageName name) (orLaterVersion $ ver verI )
+
+thebookDeps :: [Dependency]
+thebookDeps =
+  [
+    Dependency (PackageName "base") (intersectVersionRanges (orLaterVersion $ ver [4]) (earlierVersion $ ver [5]))
+  , anyV "mtl"
+  , orLater "bytestring" [0, 10]
+  , anyV "text"
+  , anyV "time"
+  , anyV "containers"
+  , orLater "binary" [0, 6, 3]
+  , anyV "lens"
+  , within "QuickCheck" [2, 6]
+  , anyV "Decimal"
+  , anyV "old-locale"
+  , orLater "fixhs" [0,1,4]
+    -- Codegen deps
+  , anyV "directory"
+  , anyV "xml-conduit"
+  , anyV "filepath"
+  , anyV "text"
+  , anyV "bytestring"
+  , anyV "haskell-src-exts"
+  , anyV "containers"
+  , anyV "filepath"
+  , anyV "system-filepath"
+  ]
+
+thebookDemoDeps :: [Dependency]
+thebookDemoDeps
+  = thebookDeps ++ [
+
+    ]
+
+
+-- | library: thebook
+thebookLibrary :: Library
+thebookLibrary
+  = Library {
+      exposedModules = map fromString [
+          "Data.ITCH.Types"
+        , "Data.ITCH.ITCH51"
+        , "Data.TheBook.MarketData"
+        , "Data.TheBook.OUCH"
+        , "Data.TheBook.Order"
+        , "Data.TheBook.Types"
+        , "Data.TheBook.Book"
+      ]
+    , libExposed = True
+    , libBuildInfo = buildInfo
+    }
+  where buildInfo = emptyBuildInfo {
+              buildTools = thebookDeps
+            , hsSourceDirs = ["src", "generated"]
+            , defaultLanguage = Just Haskell2010
+            , options = [(GHC, ["-Wall", "-fwarn-incomplete-patterns"])]
+            }
+
+thebookExecutable :: Executable
+thebookExecutable
+  = Executable {
+      exeName = "thebook"
+    , modulePath = "Main.hs"
+    , buildInfo = buildInfo
+    }
+  where buildInfo = emptyBuildInfo {
+            buildTools = thebookDeps
+          , hsSourceDirs = ["src", "generated"]
+          , defaultLanguage = Just Haskell2010
+          , options = [(GHC, [
+                       "-Wall"
+                     , "-O2"
+                     , "-fwarn-incomplete-patterns"
+                     , "-rtsopts"
+                     , "-threaded"
+                     ])]
+          }
 
 -- | Location of ITCH xmls.
 itchXmlDir :: String

@@ -34,3 +34,4 @@ isCorrectlySortedBuy :: [(Types.Price, Types.Qty)]
                      -> Bool
 isCorrectlySortedBuy entries = let book = Book.fromList entries :: Book.Book Book.Buy
                                in Book.toList book == sortBy (flip $ comparing fst) entries
+

@@ -35,10 +35,14 @@ module Data.ITCH.Types (
 import           Control.Applicative       (pure, (*>), (<$>))
 import           Control.Monad             (forM_, replicateM)
 import           Data.Binary               (Binary, get, put)
-import           Data.Binary.Get           (Get, getByteString, getWord16le,
-                                            getWord32le, getWord64le, skip)
-import           Data.Binary.Put           (Put, putByteString, putWord16le,
-                                            putWord32le, putWord64le, runPut)
+import           Data.Binary.Get           (Get)
+import qualified Data.Binary.Get           as Get (getByteString, getWord16le,
+                                                   getWord32le, getWord64le,
+                                                   skip)
+import           Data.Binary.Put           (Put)
+import qualified Data.Binary.Put           as Put (putByteString, putWord16le,
+                                                   putWord32le, putWord64le,
+                                                   runPut)
 import qualified Data.ByteString           as BS
 import qualified Data.ByteString.Char8     as BS8 (ByteString, length, pack,
                                                    replicate, unpack)
@@ -70,11 +74,11 @@ arbitraryAlpha l = (Alpha . BS.replicate l) <$> arbitrary
 
 -- | Puts the alpha given its length.
 putAlpha :: Int -> Alpha -> Put
-putAlpha l (Alpha a) = putByteString $ padAlpha l a
+putAlpha l (Alpha a) = Put.putByteString $ padAlpha l a
 
 -- | Gets the alpha given its length.
 getAlpha :: Int -> Get Alpha
-getAlpha l = Alpha <$> getByteString l
+getAlpha l = Alpha <$> Get.getByteString l
 
 -- | Padding for 'Alpha' values.
 padAlphaValue :: Char
@@ -103,8 +107,8 @@ newtype Date = Date Day
 instance Arbitrary Date where
   arbitrary = (\x -> Date $ ModifiedJulianDay {toModifiedJulianDay = x} ) <$> arbitrary
 instance Binary Date where
-  get = Date <$> (maybeToFail =<< (parseTime defaultTimeLocale "%0Y%m%d" . BS8.unpack <$> getByteString 8))
-  put (Date d) = putByteString . BS8.pack $ formatTime defaultTimeLocale "%0Y%m%d" d
+  get = Date <$> (maybeToFail =<< (parseTime defaultTimeLocale "%0Y%m%d" . BS8.unpack <$> Get.getByteString 8))
+  put (Date d) = Put.putByteString . BS8.pack $ formatTime defaultTimeLocale "%0Y%m%d" d
 
 -- | Time      | 8        | Time specified in the HH:MM:SS format using ASCII characters.
 -- The 'Arbitrary' as well as 'Binary' instances are very specifically implemented to pass
@@ -117,8 +121,8 @@ newtype Time = Time TimeOfDay
 instance Arbitrary Time where
   arbitrary = Time . timeToTimeOfDay . secondsToDiffTime <$> suchThat arbitrary (\d -> d >= 0 && d <= 60 * 60 * 24)
 instance Binary Time where
-  get = Time <$> (maybeToFail =<< (parseTime defaultTimeLocale "%H:%M:%S" . BS8.unpack <$> getByteString 8))
-  put (Time t) = putByteString . BS8.pack $ formatTime defaultTimeLocale "%H:%M:%S" t
+  get = Time <$> (maybeToFail =<< (parseTime defaultTimeLocale "%H:%M:%S" . BS8.unpack <$> Get.getByteString 8))
+  put (Time t) = Put.putByteString . BS8.pack $ formatTime defaultTimeLocale "%H:%M:%S" t
 
 -- | Price     | 8        | Signed Little-Endian encoded eight byte integer field with eight implied decimal places.
 newtype Price = Price (DecimalRaw Word64)
@@ -126,8 +130,8 @@ newtype Price = Price (DecimalRaw Word64)
 instance Arbitrary Price where
   arbitrary = Price . realFracToDecimal 8 <$> (arbitrary :: Gen Double)
 instance Binary Price where
-  get = Price . Decimal 8 <$> getWord64le
-  put (Price (Decimal _ p)) = putWord64le p
+  get = Price . Decimal 8 <$> Get.getWord64le
+  put (Price (Decimal _ p)) = Put.putWord64le p
 
 -- | UInt8     | 1        | 8 bit unsigned integer.
 type UInt8 = Word8
@@ -136,8 +140,8 @@ type UInt8 = Word8
 newtype UInt16 = UInt16 Word16
   deriving (Eq, Show, Storable, Arbitrary)
 instance Binary UInt16 where
-  get = UInt16 <$> getWord16le
-  put (UInt16 uint16) = putWord16le uint16
+  get = UInt16 <$> Get.getWord16le
+  put (UInt16 uint16) = Put.putWord16le uint16
 
 -- UInt32    | 4        | Little-Endian encoded 32 bit unsigned integer.
 uint32 :: Word32 -> UInt32
@@ -146,15 +150,15 @@ uint32 = UInt32
 newtype UInt32 = UInt32 Word32
   deriving (Eq, Show, Storable, Arbitrary)
 instance Binary UInt32 where
-  get = UInt32 <$> getWord32le
-  put (UInt32 u) = putWord32le u
+  get = UInt32 <$> Get.getWord32le
+  put (UInt32 u) = Put.putWord32le u
 
 -- UInt64    | 8        | Little-Endian encoded 64 bit unsigned integer.
 newtype UInt64 = UInt64 Word64
   deriving (Eq, Show, Storable, Arbitrary)
 instance Binary UInt64 where
-  get = UInt64 <$> getWord64le
-  put (UInt64 uint64) = putWord64le uint64
+  get = UInt64 <$> Get.getWord64le
+  put (UInt64 uint64) = Put.putWord64le uint64
 
 -- * Unit header
 --     Field             | Offset | Length   | Type   | Description
@@ -188,9 +192,9 @@ sizeOfHeader = (sizeOf (undefined :: UInt16))
 -- | Write the messages with unit header prepended.
 writeMessages :: Binary a => Byte -> UInt32 -> [a] -> BSL.ByteString
 writeMessages marketDataGroup headerSequenceNumber msgs =
-  let serialised = runPut $ forM_ msgs put
+  let serialised = Put.runPut $ forM_ msgs put
       size = UInt16 (fromIntegral $ sizeOfHeader + (fromIntegral $ BSL.length serialised))
-      unitHeader = runPut $
+      unitHeader = Put.runPut $
         put size *>
         put (fromIntegral . length $ msgs :: UInt8) *>
         put marketDataGroup *>
@@ -230,7 +234,7 @@ skipRemaining :: UInt8 -> Int -> Get ()
 skipRemaining expected actual
   = let diff = (fromIntegral expected) - actual
     in if diff > 0
-        then skip diff
+        then Get.skip diff
         else return ()
 
 -- | Transforms `Data.Maybe` into a `Get`, where `Nothing` constitutes a call to `fail`.

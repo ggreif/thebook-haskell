@@ -13,7 +13,7 @@ copyright:          2014 Jakub Kozlowski <mail@jakub-kozlowski.com>
 maintainer:         mail@jakub-kozlowski.com
 
 build-type:         Custom
-cabal-version:      >=1.9.2
+cabal-version:      >= 1.9.2
 extra-source-files: LICENCE
                     README.md
 
@@ -35,6 +35,7 @@ library
                     , Data.TheBook.Order
                     , Data.TheBook.Types
                     , Data.TheBook.Book
+                    , Data.TheBook.Rule
   default-language:   Haskell2010
   build-depends:      base >= 4 && < 5
                     , mtl
@@ -47,7 +48,9 @@ library
                     , QuickCheck == 2.6.*
                     , Decimal
                     , old-locale
-                       -- Codegen deps
+                    , fixhs >= 0.1.4 
+                    , data-ordlist >= 0.4.6
+                      -- Codegen deps
                     , directory
                     , base >= 4 && < 5
                     , xml-conduit
@@ -68,12 +71,15 @@ executable thebook
   build-depends:      base >= 4 && < 5
                     , mtl
                     , stm
+                    , lens
                     , random
                     , bytestring
                     , text
                     , time
                     , containers
                     , hslogger
+                    , Decimal
+                    , data-ordlist >= 0.4.6
                     , thebook
                     , QuickCheck == 2.6.*
   default-language:   Haskell2010
@@ -96,6 +102,7 @@ executable thebook-demo-client
                     , bytestring
                     , text
                     , time
+                    , lens
                     , containers
                     , hslogger
                     , hslogger-template
@@ -119,6 +126,7 @@ executable thebook-demo-server
                     , text
                     , network
                     , time
+                    , lens
                     , containers
                     , hslogger
                     , hslogger-template
@@ -142,13 +150,15 @@ test-suite thebook-tests
                     , text
                     , time
                     , binary
+                    , mtl
+                    , lens
                     , tasty == 0.8
                     , tasty-quickcheck == 0.8
                     , QuickCheck == 2.6.*
                     , Cabal >= 1.9.2
                     , Decimal
                     , old-locale
-
+                    , fixhs >= 0.1.4 
   Ghc-Options:       -Wall 
                      -O0 
                      -fhpc 
@@ -165,6 +175,7 @@ benchmark thebook-bench
                     , bench
   main-is:            Benchmark.hs
   build-depends:      base
+                    , mtl
                     , criterion
                     , random
                       -- Codegen deps
