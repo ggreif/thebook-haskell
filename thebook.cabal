@@ -30,9 +30,6 @@ flag documentation
 library
   exposed-modules:    Data.ITCH.Types
                     , Data.ITCH.ITCH51
-                    , Data.TheBook.MarketData
-                    , Data.TheBook.OUCH
-                    , Data.TheBook.Order
                     , Data.TheBook.Types
                     , Data.TheBook.Book
                     , Data.TheBook.Rule
