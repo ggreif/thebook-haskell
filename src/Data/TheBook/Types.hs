@@ -15,13 +15,18 @@ module Data.TheBook.Types (
   , Time
   , Dictionary, TickRule(..), WithDictionary, dictL
   , WithSession, sessionL, SessionID
+  , Order, WithOrder, orderL
 
   -- * Enums
   , Side(..)
   , OrderType(..)
+  , OrderRejectReason(..)
+
+  -- * Incoming messages
+  , IncomingMessage
 
   -- * Outgoing messages
-  , CancelReject
+  , OutgoingMessage(..)
 ) where
 
 import           Control.Applicative       ((<$>), (<*>))
@@ -33,11 +38,15 @@ import           Data.List                 (find, sortBy)
 import           Data.Text                 (Text)
 import qualified Data.Text                 as T
 import qualified Data.Time.Clock           as Clock
+import           Data.Word                 (Word64)
 import           Test.QuickCheck.Arbitrary (Arbitrary, arbitrary)
 import           Test.QuickCheck.Gen       (Gen, elements)
 
 -- | Type of id of 'Order'.
 type OrderID = ByteString
+
+-- | Client assigned order id.
+type ClOrdID = ByteString
 
 -- | Type of a price.
 type Price = Double
@@ -71,6 +80,9 @@ type Time = Clock.UTCTime
 -- | Used to identify the sender of the message.
 type SessionID = ByteString
 
+-- | Monotonically increasing execution id.
+type ExecId = Int
+
 -- | Extracts 'SessionID' from the state.
 class WithSession a where
   sessionL :: Lens' a SessionID
@@ -93,10 +105,10 @@ data Dictionary = Dictionary {
     _dInstrument :: !Instrument
 
     -- | Currency of the instrument.
-  , _dCurrency   :: Currency
+  , _dCurrency   :: !Currency
 
     -- | Tick rules of the instrument.
-  , _dTickRules  :: [TickRule]
+  , _dTickRules  :: ![TickRule]
 } deriving (Eq, Show)
 makeLenses ''Dictionary
 
@@ -131,11 +143,14 @@ tickRuleForPrice d p = case find ((==) p . _tickPrice) (_dTickRules d) of
 
 -- | Represents an order on the book.
 data Order = Order {
-    _oOrderId    :: OrderID
-  , _oSide       :: Side
-  , _oInstrument :: Instrument
-  , _oVersions   :: [OrderVersion]
+    _oOrderId    :: !OrderID
+  , _oSide       :: !Side
+  , _oInstrument :: !Instrument
+  , _oVersions   :: ![OrderVersion]
 }
+
+class WithOrder a where
+  orderL :: Lens' a Order
 
 data OrderVersion = OrderVersion {
 
@@ -242,41 +257,83 @@ instance Arbitrary OrderStatus where
                        , ODoneForDay
                        ]
 
--- | Code to identify reason for order rejection.
+-- | Code to identify reason for order rejection in 'ExecutionReport'.
 data OrderRejectReason
-  = TooLateToCancel
-  | UnknownOrder
-  | DuplicateOrder
-  | InvalidPriceIncrement
-  | IncorrectQuantity
+  = OUnknownSymbol
+  | OExchangeClosed
+  | OOrderExceedsLimit
+  | OTooLateToEnter
+  | OUnknownOrder
+  | ODuplicateOrder
+  | OIncorrectQuantity
   deriving (Eq, Show, Enum, Bounded)
 instance Arbitrary OrderRejectReason where
-  arbitrary = elements [ TooLateToCancel
-                       , UnknownOrder
-                       , DuplicateOrder
-                       , InvalidPriceIncrement
-                       , IncorrectQuantity
+  arbitrary = elements [ OUnknownSymbol
+                       , OExchangeClosed
+                       , OOrderExceedsLimit
+                       , OTooLateToEnter
+                       , OUnknownOrder
+                       , ODuplicateOrder
+                       , OIncorrectQuantity
                        ]
+
+-- | Code to identify reason for rejection in 'CancelReject'.
+data CancelRejectReason
+  = CTooLateToCancel
+  | CUnknownOrder
+  deriving (Eq, Show, Enum, Bounded)
+instance Arbitrary CancelRejectReason where
+  arbitrary = elements [ CTooLateToCancel
+                       , CUnknownOrder
+                       ]
+
+-----------------------------------------------------------------------------
+-- * Incoming messages
+-----------------------------------------------------------------------------
+
+data IncomingMessage
+    -- | The 'OrderCancelReplaceRequest' is used to change
+    -- the parameters of an existing order.
+  = OrderCancelReplaceRequest {
+      _ocrrOrderId     :: !OrderID
+    , _ocrrInstrument  :: !Instrument
+    , _ocrrSide        :: !Side
+    , _ocrrQty         :: !(Maybe Qty)
+    , _ocrrOrderType   :: !OrderType
+    , _ocrrPrice       :: !(Maybe Price)
+    , _ocrrTimeInForce :: !(Maybe TimeInForce)
+    , _ocrrExpireTime  :: !(Maybe Time) }
+  | NewOrderSingle {
+      _nsClOrdID :: ClOrdID
+    , _nsPrice   :: Price }
 
 -----------------------------------------------------------------------------
 -- * Outgoing messages
 -----------------------------------------------------------------------------
 
--- | Issued upon receipt of a 'CancelRequest' or 'CancelReplaceRequest'
--- message which cannot be honored.
-data CancelReject = CancelReject {
-    -- | Type of the 'CancelReject'
-    _crType       :: CancelRejectType
+data OutgoingMessage
+    -- | Issued upon receipt of a 'CancelRequest' or 'CancelReplaceRequest'
+    -- message which cannot be honored.
+  = CancelReject {
+    _crOrder        :: !(Maybe Order)
+  , _crType         :: !CancelRejectType
+  , _crInstrument   :: !Instrument
+  , _crRejectReason :: !CancelRejectReason }
 
-    -- | Current status of the 'Order'
-  , _crOrdStatus  :: OrderStatus
+    -- | The 'ExecutionReport' message is used to:
+    -- * confirm the receipt of an order.
+    -- * confirm changes to an existing order (i.e. accept cancel and replace requests)
+    -- * relay order status information.
+    -- * relay fill information on working orders.
+    -- * reject orders.
+  | ExecutionReport {
+       _erTimestamp :: !Time
+    , _erExecId     :: !ExecId
+    , _erExecType   :: !ExecType
+    , _erOrder      :: !Order
+    , _erPrice      :: !Price
+    , _erQty        :: !Qty }
 
-    -- | Instrument of the 'Order'
-  , _crInstrument :: Instrument
-
-    -- | Underlying 'Order'
-  , _crOrder      :: Order
-}
 
 
 

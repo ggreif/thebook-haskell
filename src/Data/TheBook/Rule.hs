@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE RankNTypes            #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.TheBook.Rule
@@ -13,15 +14,20 @@
 -----------------------------------------------------------------------------
 module Data.TheBook.Rule where
 
+import           Control.Applicative       ((<$>), (<*>))
+import           Control.Lens
 import           Control.Lens.Getter       (view)
+import           Control.Monad             (MonadPlus)
 import           Control.Monad.Error.Class (MonadError, throwError)
 import           Control.Monad.Reader      (MonadReader)
 import           Control.Monad.Writer      (MonadWriter, tell)
 import qualified Data.FIX.Parser           as FIX (messageP, nextP)
 import           Data.TheBook.Book         (Book)
 import qualified Data.TheBook.Book         as Book
-import           Data.TheBook.Types        (SessionID, WithDictionary,
-                                            WithSession, sessionL)
+import           Data.TheBook.Types        (OrderRejectReason, SessionID,
+                                            WithDictionary, WithOrder,
+                                            WithSession, dictL, orderL,
+                                            sessionL)
 
 data Command msg
   = SendMessage msg SessionID
@@ -38,9 +44,17 @@ require check e = if check
                   else throwError e
 
 
+-- | Type synomym for a rule that exists in order to validate
+-- some aspect of an order. If this rule does not fire,
+-- it means the validation was passed.
+type Validation r e m = (Functor m, MonadReader r m, MonadError e m, MonadPlus m) => m ()
 
---validatePrice :: (WithDictionary a, Functor m, MonadReader a m, MonadError e m)
---              =>
+validatePrice :: (WithDictionary r, WithOrder r)
+              => Validation r OrderRejectReason m
+validatePrice = undefined
+
+  --action <$> pure dictL <*> orderL
+  --where action dict order = return ()
 
 
 -- Ideas:
@@ -84,3 +98,15 @@ require check e = if check
 -- underlying, unrolled representation.
 --
 -- Let's see if this is at all possible.
+
+-- MonadError e m => MonadError e (ParsecT s u m)
+-- MonadReader r m => MonadReader r (ParsecT s u m)
+-- MonadState s m => MonadState s (ParsecT s' u m)
+-- MonadTrans (ParsecT s u)
+-- Monad (ParsecT s u m)
+-- Functor (ParsecT s u m)
+-- MonadPlus (ParsecT s u m)
+-- Applicative (ParsecT s u m)
+-- Alternative (ParsecT s u m)
+-- MonadIO m => MonadIO (ParsecT s u m)
+-- MonadCont m => MonadCont (ParsecT s u m)
