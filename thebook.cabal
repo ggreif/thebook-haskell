@@ -47,6 +47,7 @@ library
                     , old-locale
                     , fixhs >= 0.1.4 
                     , data-ordlist >= 0.4.6
+                    , monad-logger >= 0.3.6
                       -- Codegen deps
                     , directory
                     , base >= 4 && < 5
@@ -76,6 +77,7 @@ executable thebook
                     , containers
                     , hslogger
                     , Decimal
+                    , monad-logger >= 0.3.6
                     , data-ordlist >= 0.4.6
                     , thebook
                     , QuickCheck == 2.6.*
@@ -100,6 +102,7 @@ executable thebook-demo-client
                     , text
                     , time
                     , lens
+                    , monad-logger >= 0.3.6
                     , containers
                     , hslogger
                     , hslogger-template
@@ -124,6 +127,7 @@ executable thebook-demo-server
                     , network
                     , time
                     , lens
+                    , monad-logger >= 0.3.6
                     , containers
                     , hslogger
                     , hslogger-template
@@ -150,6 +154,7 @@ test-suite thebook-tests
                     , mtl
                     , lens
                     , tasty == 0.8
+                    , monad-logger >= 0.3.6
                     , tasty-quickcheck == 0.8
                     , QuickCheck == 2.6.*
                     , Cabal >= 1.9.2
@@ -181,6 +186,7 @@ benchmark thebook-bench
                     , xml-conduit
                     , filepath
                     , text
+                    , monad-logger >= 0.3.6
                     , bytestring
                     , haskell-src-exts
                     , containers

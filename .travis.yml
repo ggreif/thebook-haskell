@@ -1,7 +1,7 @@
 language: haskell
 
 before_install:
-  - cabal install 'hpc-coveralls >= 0.1.2'
+  - cabal install 'hpc-coveralls >= 0.2.1'
   - sudo apt-get -q -y install hlint || cabal install hlint
 
 script:
@@ -10,4 +10,4 @@ script:
   - run-cabal-test --show-details=always
 
 after_script:
-  - hpc-coveralls thebook-tests
+  - hpc-coveralls --exclude-dir=tests,bench thebook-tests
