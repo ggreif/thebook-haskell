@@ -13,7 +13,7 @@ module Data.TheBook.Types (
     Price, TickSize, Qty
   , Instrument, Market, Currency
   , Time
-  , Dictionary, TickRule(..), WithDictionary, dictL
+  , Dictionary, TickRule(..), WithDictionary, dictL, dictionary
   , WithSession, sessionL, SessionID
   , Order, WithOrder, orderL
 
@@ -32,6 +32,7 @@ module Data.TheBook.Types (
 import           Control.Applicative       ((<$>), (<*>))
 import           Control.Lens              (Lens', makeLenses)
 import           Control.Monad             (MonadPlus, mplus, mzero)
+import           Control.Monad.Error       (Error)
 import           Data.ByteString           (ByteString)
 import           Data.Function             (on)
 import           Data.List                 (find, sortBy)
@@ -150,7 +151,7 @@ data Order = Order {
 }
 
 class WithOrder a where
-  orderL :: Lens' a Order
+  orderL :: Lens' a (Maybe Order)
 
 data OrderVersion = OrderVersion {
 
@@ -265,6 +266,7 @@ data OrderRejectReason
   | OTooLateToEnter
   | OUnknownOrder
   | ODuplicateOrder
+  | OIncorrectPriceIncrement
   | OIncorrectQuantity
   deriving (Eq, Show, Enum, Bounded)
 instance Arbitrary OrderRejectReason where
@@ -274,6 +276,7 @@ instance Arbitrary OrderRejectReason where
                        , OTooLateToEnter
                        , OUnknownOrder
                        , ODuplicateOrder
+                       , OIncorrectPriceIncrement
                        , OIncorrectQuantity
                        ]
 
@@ -337,14 +340,4 @@ data OutgoingMessage
 
 
 
--- MonadError e m => MonadError e (ParsecT s u m)
--- MonadReader r m => MonadReader r (ParsecT s u m)
--- MonadState s m => MonadState s (ParsecT s' u m)
--- MonadTrans (ParsecT s u)
--- Monad (ParsecT s u m)
--- Functor (ParsecT s u m)
--- MonadPlus (ParsecT s u m)
--- Applicative (ParsecT s u m)
--- Alternative (ParsecT s u m)
--- MonadIO m => MonadIO (ParsecT s u m)
--- MonadCont m => MonadCont (ParsecT s u m)
+

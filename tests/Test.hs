@@ -10,11 +10,12 @@
 -----------------------------------------------------------------------------
 module Main where
 
-import qualified Data.ITCH.ITCH51Test  as ITCH51Test
-import qualified Data.ITCH.TypesTest   as TypesTest
-import qualified Data.TheBook.BookTest as BookTest
-import qualified Data.TheBook.RuleTest as RuleTest
-import           Test.Tasty            as Tasty
+import qualified Data.ITCH.ITCH51Test   as ITCH51Test
+import qualified Data.ITCH.TypesTest    as ITCHTypesTest
+import qualified Data.TheBook.BookTest  as BookTest
+import qualified Data.TheBook.RuleTest  as RuleTest
+import qualified Data.TheBook.TypesTest as TypesTest
+import qualified Test.Tasty             as Tasty
 
 main :: IO ()
 main = Tasty.defaultMain tests
@@ -22,7 +23,8 @@ main = Tasty.defaultMain tests
 tests :: Tasty.TestTree
 tests = Tasty.testGroup "Tests" [
     BookTest.tests
-  , TypesTest.tests
+  , ITCHTypesTest.tests
   , ITCH51Test.tests
   , RuleTest.tests
+  , TypesTest.tests
   ]

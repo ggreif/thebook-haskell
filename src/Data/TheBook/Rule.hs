@@ -14,20 +14,22 @@
 -----------------------------------------------------------------------------
 module Data.TheBook.Rule where
 
-import           Control.Applicative       ((<$>), (<*>))
-import           Control.Lens
-import           Control.Lens.Getter       (view)
-import           Control.Monad             (MonadPlus)
-import           Control.Monad.Error.Class (MonadError, throwError)
-import           Control.Monad.Reader      (MonadReader)
-import           Control.Monad.Writer      (MonadWriter, tell)
-import qualified Data.FIX.Parser           as FIX (messageP, nextP)
-import           Data.TheBook.Book         (Book)
-import qualified Data.TheBook.Book         as Book
-import           Data.TheBook.Types        (OrderRejectReason, SessionID,
-                                            WithDictionary, WithOrder,
-                                            WithSession, dictL, orderL,
-                                            sessionL)
+import           Control.Applicative  (Applicative, (<$>), (<*>))
+import           Control.Lens         (Getter, Lens', use, view)
+import           Control.Lens.Getter  (use, view)
+import           Control.Monad        (MonadPlus, mzero, (=<<), (>>=))
+import           Control.Monad.Error  (MonadError, throwError)
+import           Control.Monad.Reader (MonadReader)
+import           Control.Monad.State  (MonadState)
+import           Control.Monad.Writer (MonadWriter, tell)
+import qualified Data.FIX.Parser      as FIX (messageP, nextP)
+import           Data.Maybe           (maybe)
+import           Data.TheBook.Book    (Book)
+import qualified Data.TheBook.Book    as Book
+import           Data.TheBook.Types   (OrderRejectReason,
+                                       OrderRejectReason (..), SessionID,
+                                       WithDictionary, WithOrder, WithSession,
+                                       dictL, orderL, sessionL)
 
 data Command msg
   = SendMessage msg SessionID
@@ -43,18 +45,42 @@ require check e = if check
                   then return ()
                   else throwError e
 
+-- | Tries to get the value of the lens from the state.
+-- If the lens evaluates to 'Nothing', 'mzero' is invoked,
+-- which will fail the rule. Otherwise, this function returns
+-- the value of the lens.
+condS :: (MonadState s m, MonadPlus m)
+      => Lens' s (Maybe a)
+      -> m a
+condS l = use l >>= mfromMaybe
+
+condR :: (MonadReader r m, MonadPlus m)
+      => Lens' r (Maybe a)
+      -> m a
+condR l = view l >>= mfromMaybe
+
+mfromMaybe :: MonadPlus m => Maybe a -> m a
+mfromMaybe = maybe mzero return
 
 -- | Type synomym for a rule that exists in order to validate
 -- some aspect of an order. If this rule does not fire,
 -- it means the validation was passed.
-type Validation r e m = (Functor m, MonadReader r m, MonadError e m, MonadPlus m) => m ()
+type Validation r e m = (Applicative m, Functor m, MonadReader r m, MonadError e m, MonadPlus m) => m ()
 
 validatePrice :: (WithDictionary r, WithOrder r)
               => Validation r OrderRejectReason m
-validatePrice = undefined
+validatePrice = do
+  -- Deps
+  dict <- view dictL
+  order <- condR orderL
+
+  -- Validations
+  require True OIncorrectPriceIncrement
+
 
   --action <$> pure dictL <*> orderL
   --where action dict order = return ()
+
 
 
 -- Ideas:
