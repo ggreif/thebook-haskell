@@ -38,6 +38,10 @@ The overriding goal of this project is to (eventually) create a (near) clone of 
 ### Config
 * Use [dire](http://hackage.haskell.org/package/dyre) for config.
 
+### Examples
+
+* Use [doctest](https://github.com/sol/doctest-haskell#readme) for examples in haddocks.
+
 ## Phases
 * Validation (NewOrderSingle enters -> Particular order comes out)
 * The following are performed until trade happens
