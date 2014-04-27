@@ -13,6 +13,7 @@ module Main where
 import qualified Data.ITCH.ITCH51Test   as ITCH51Test
 import qualified Data.ITCH.TypesTest    as ITCHTypesTest
 import qualified Data.TheBook.BookTest  as BookTest
+import qualified Data.TheBook.MonadTest as Monad
 import qualified Data.TheBook.RuleTest  as RuleTest
 import qualified Data.TheBook.TypesTest as TypesTest
 import qualified Test.Tasty             as Tasty
@@ -27,4 +28,5 @@ tests = Tasty.testGroup "Tests" [
   , ITCH51Test.tests
   , RuleTest.tests
   , TypesTest.tests
+  , Monad.tests
   ]

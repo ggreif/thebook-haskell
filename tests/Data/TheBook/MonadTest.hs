@@ -1,27 +1,25 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Data.TheBook.RuleTest
+-- Module      :  Data.TheBook.MonadTest
 -- Copyright   :  (c) 2014, Jakub Kozlowski
 -- License     :  MIT
 --
 -- Maintainer  :  mail@jakub-kozlowski.com
 --
--- Tests for 'Data.TheBook.Rule'.
+-- Tests for 'Data.TheBook.Monad'.
 -----------------------------------------------------------------------------
-module Data.TheBook.RuleTest (tests) where
+module Data.TheBook.MonadTest (tests) where
 
-import           Data.List
-import           Data.Ord
-import           Data.TheBook.Rule     as Book
+import           Data.TheBook.Monad
 import           Data.TheBook.Types    as Types
 import           Test.Tasty
 import           Test.Tasty.QuickCheck as QC
 
 tests :: TestTree
-tests = testGroup "Data.TheBook.RuleTest" [qcProps]
+tests = testGroup "Data.TheBook.MonadTest" [qcProps]
 
 qcProps :: TestTree
 qcProps = testGroup "(checked by QuickCheck)"
-  [ QC.testProperty "Bla" True
+  [ QC.testProperty "dummy" True
   ]
 
