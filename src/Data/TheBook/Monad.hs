@@ -11,8 +11,10 @@
 module Data.TheBook.Monad (
 ) where
 
-import           Control.Monad       (Monad)
+import           Control.Applicative (Applicative, pure, (<*>))
+import           Control.Monad       (Monad, ap)
 import           Control.Monad.Error (Error)
+import           Data.Functor        (Functor)
 import           Data.Monoid         (Monoid, mempty, (<>))
 import qualified Data.TheBook.Types  as Types
 
@@ -38,10 +40,21 @@ data Result   s w e a
 --   the left hand side terminates with 'NoMatch'
 --   or 'Exception'.
 newtype Rule s w e a = Rule { runRule :: s -> Result s w e a }
+
 instance (Monoid w, Error e) => Monad (Rule s w e) where
   return = returnR
   (>>=)  = bindR
   fail   = failR
+
+instance Functor (Rule s w e) where
+  fmap f m = Rule $ \s -> case runRule m s of
+    Match     s' w   a -> Match s' w (f a)
+    NoMatch            -> NoMatch
+    Exception      e   -> Exception e
+
+instance (Monoid w, Error e) => Applicative (Rule s w e) where
+  pure = returnR
+  (<*>) = ap
 
 {-# INLINE returnR #-}
 returnR :: Monoid w => a -> Rule s w e a
@@ -63,5 +76,6 @@ bindR m f = Rule $ \s -> case runRule m s of
 {-# INLINE failR #-}
 failR :: String -> Rule s w e a
 failR = error
+
 
 

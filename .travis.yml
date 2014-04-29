@@ -10,4 +10,4 @@ script:
   - run-cabal-test --show-details=always
 
 after_script:
-  - hpc-coveralls --exclude-dir=tests thebook-tests
+  - hpc-coveralls --exclude-dir=tests --exclude-dir=bench thebook-tests
