@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 -----------------------------------------------------------------------------
 -- |
 -- Module      :  Data.TheBook.Monad
@@ -11,12 +13,17 @@
 module Data.TheBook.Monad (
 ) where
 
-import           Control.Applicative (Applicative, pure, (<*>))
-import           Control.Monad       (Monad, ap)
-import           Control.Monad.Error (Error)
-import           Data.Functor        (Functor)
-import           Data.Monoid         (Monoid, mempty, (<>))
-import qualified Data.TheBook.Types  as Types
+import           Control.Applicative  (Applicative, pure, (<*>))
+import           Control.Monad        (Monad, MonadPlus, ap, mplus, mzero,
+                                       (=<<))
+import           Control.Monad.Error  (Error, MonadError, catchError,
+                                       throwError)
+import           Control.Monad.Reader (MonadReader)
+import           Control.Monad.State  (MonadState)
+import           Control.Monad.Writer (MonadWriter, tell)
+import           Data.Functor         (Functor)
+import           Data.Monoid          (Monoid, mempty, (<>))
+import qualified Data.TheBook.Types   as Types
 
 -- | The result of trying to match a rule.
 -- This is parameterised over:
@@ -56,6 +63,14 @@ instance (Monoid w, Error e) => Applicative (Rule s w e) where
   pure = returnR
   (<*>) = ap
 
+instance (Monoid w, Error e) => MonadPlus (Rule s w e) where
+  mzero = mzeroR
+  mplus = mplusR
+
+instance (Monoid w, Error e) => MonadError e (Rule s w e) where
+  throwError e = Rule $ \_ -> Exception e
+  catchError = catchErrorR
+
 {-# INLINE returnR #-}
 returnR :: Monoid w => a -> Rule s w e a
 returnR x = Rule $ \s -> Match s mempty x
@@ -77,5 +92,24 @@ bindR m f = Rule $ \s -> case runRule m s of
 failR :: String -> Rule s w e a
 failR = error
 
+{-# INLINE mzeroR #-}
+mzeroR :: Rule s w e a
+mzeroR = Rule $ \_ -> NoMatch
 
+{-# INLINE mplusR #-}
+mplusR :: (Monoid w, Error e)
+       => Rule s w e a
+       -> Rule s w e a
+       -> Rule s w e a
+mplusR l r = bindR l (const r)
+
+{-# INLINE catchErrorR #-}
+catchErrorR :: (Monoid w, Error e)
+            => Rule s w e a
+            -> (e -> Rule s w e a)
+            -> Rule s w e a
+catchErrorR m f = Rule $ \s -> case runRule m s of
+  match@(Match _ _ _) -> match
+  NoMatch -> NoMatch
+  Exception e -> runRule (f e) s
 
