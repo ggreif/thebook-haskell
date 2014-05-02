@@ -13,5 +13,3 @@ import Control.Concurrent.MVar
            return ":reload \n :main \n :test"
      ))
 :}
-
-:def rtests (\_ -> return ":reload \n :main")
