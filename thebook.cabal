@@ -143,7 +143,7 @@ executable thebook-demo-server
                      -rtsopts 
                      -threaded
 
-test-suite thebook-tests
+test-suite thebook-hpc
   main-is:            Test.hs
   type:               exitcode-stdio-1.0
   build-depends:      base
@@ -167,6 +167,33 @@ test-suite thebook-tests
                      -fhpc 
                      -hpcdir 
                       dist/hpc/mix/thebook-tests
+  hs-source-dirs:     src 
+                    , generated
+                    , tests
+
+test-suite thebook-tests
+  main-is:            Test.hs
+  type:               exitcode-stdio-1.0
+  build-depends:      base
+                    , bytestring
+                    , containers
+                    , text
+                    , time
+                    , binary
+                    , mtl
+                    , lens
+                    , tasty == 0.8
+                    , monad-logger >= 0.3.6
+                    , tasty-quickcheck == 0.8
+                    , QuickCheck == 2.6.*
+                    , Cabal >= 1.9.2
+                    , Decimal
+                    , old-locale
+                    , fixhs >= 0.1.4 
+                    , fsnotify >= 0.0.11
+                    , system-filepath >= 0.4.7
+  Ghc-Options:       -Wall 
+                     -O0 
   hs-source-dirs:     src 
                     , generated
                     , tests
