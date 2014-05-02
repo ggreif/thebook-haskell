@@ -2,13 +2,17 @@
 import System.FSNotify
 import Data.String
 import Control.Concurrent.MVar
+import Control.Concurrent
 
 :{
 :def test const (withManager (\manager -> 
-     do putStrLn "Listening to changes..."
+     do putStrLn "Listening to changes, press any key to stop..."
         lock <- newEmptyMVar
-        watchTree manager (fromString ".") (const True) (const $ putMVar lock ())
-        _ <- readMVar lock
-        return ":reload \n :main \n :test"
+        watchTree manager (fromString ".") (const True) (const $ putMVar lock True)
+        forkIO (getLine >> putMVar lock False)
+        rerun <- readMVar lock
+        if rerun 
+          then return ":reload \n :main \n :test"
+          else return ""
      ))
 :}
