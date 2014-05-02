@@ -18,7 +18,7 @@ The overriding goal of this project is to (eventually) create a (near) clone of 
 ### General features
 * Networking (FIX in/OUCH or ITCH out)
 * Separate business logic (pure model of order book) from the side-effecting bits.
-** The business logic should be written as a rule engine, proposed syntax is in src/Data/TheBook/Rule.hs.
+    - The business logic should be written as a rule engine, proposed syntax is in src/Data/TheBook/Rule.hs and a concrete monad is in src/Data/TheBook/Monad.hs.
 * Separate market data distribution engine.
 * Admin commands (create market, clear order book)
 
