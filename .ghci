@@ -5,11 +5,10 @@ import Control.Concurrent.MVar
 
 :{
 :def test const (withManager (\manager -> 
-     let notified l = putMVar l () >> stopManager manager
-     in do putStrLn "Listening to changes to tests/ directory"
-           lock <- newEmptyMVar
-           watchTree manager (fromString "tests/") (const True) (const $ notified lock)
-           _ <- readMVar lock
-           return ":reload \n :main \n :test"
+     do putStrLn "Listening to changes..."
+        lock <- newEmptyMVar
+        watchTree manager (fromString ".") (const True) (const $ putMVar lock ())
+        _ <- readMVar lock
+        return ":reload \n :main \n :test"
      ))
 :}
